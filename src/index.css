@@ -1,0 +1,33 @@
+/* App Tailwind build + CIQ design tokens (theme utilities for Ally composites) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/tokens.css";
+@import "./styles/ciq-theme.css";
+
+/* Scan CIQ compiled package so component class names are generated */
+@source "../node_modules/@ciq-dev/ciq-design-system/dist";
+
+/* Desktop-first prototype shell */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: var(--canvas, #f8fafc);
+  color: var(--fg-primary, #020617);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
