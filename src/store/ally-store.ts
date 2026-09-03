@@ -313,7 +313,6 @@ export const useAllyStore = create<AllyState>()(
                     turn.id === allyTurnId
                       ? {
                           ...turn,
-                          thinking: undefined,
                           answer,
                         }
                       : turn

@@ -35,14 +35,10 @@ export function WhyList({
 
   return (
     <div className="space-y-2">
-      {bullets.map((b, i) => (
+      {bullets.map((b) => (
         <p
           key={b.slice(0, 48)}
-          className={
-            i === 0
-              ? "text-base leading-relaxed text-fg-primary"
-              : "text-sm leading-relaxed text-fg-secondary"
-          }
+          className="text-base leading-relaxed text-fg-primary"
         >
           {b}
         </p>

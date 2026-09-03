@@ -61,13 +61,6 @@ export function UserMessage({ turn, scopeChips }: UserMessageProps) {
   return (
     <Message className="justify-end">
       <div className="flex max-w-[85%] flex-col items-end gap-1">
-        {scopeChips.length > 0 && (
-          <div className="flex flex-wrap justify-end gap-1">
-            {scopeChips.map((c) => (
-              <Chip key={c} message={c} className="bg-white/80" />
-            ))}
-          </div>
-        )}
         <MessageContent variant="user" className="max-w-full">
           {turn.input ?? ""}
         </MessageContent>
@@ -76,6 +69,13 @@ export function UserMessage({ turn, scopeChips }: UserMessageProps) {
             📎 {a.name} ({a.sizeKb} KB)
           </div>
         ))}
+        {scopeChips.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1">
+            {scopeChips.map((c) => (
+              <Chip key={c} message={c} className="bg-white/80" />
+            ))}
+          </div>
+        )}
       </div>
     </Message>
   );
@@ -159,37 +159,16 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
 
           {/* Plain agent response — fills the chat column (max-w-3xl Content) */}
           <div className="relative w-full space-y-5">
-            <div className="flex items-start justify-between gap-3 pr-10">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-fg-tertiary">
+            {turn.thinking?.steps.length ? (
+              <AgentThinking
+                steps={turn.thinking.steps}
+                done={turn.thinking.done}
+              />
+            ) : null}
+
+            <div className="flex items-start gap-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-fg-tertiary">
                 {answer.scopeLine}
-              </div>
-              <div className="absolute top-0 right-0 flex shrink-0 gap-2.5">
-                <button
-                  type="button"
-                  aria-label="Thumbs up"
-                  className={cn(
-                    "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
-                    feedback === "up" && "bg-green-50 text-feedback-success"
-                  )}
-                  onClick={() =>
-                    setFeedback(turn.id, { sentiment: "up" })
-                  }
-                >
-                  <ThumbsUp className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Thumbs down"
-                  className={cn(
-                    "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
-                    feedback === "down" && "bg-red-50 text-feedback-danger"
-                  )}
-                  onClick={() =>
-                    setFeedback(turn.id, { sentiment: "down" })
-                  }
-                >
-                  <ThumbsDown className="size-3.5" />
-                </button>
               </div>
             </div>
 
@@ -301,6 +280,31 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
                   }
                 />
               ) : null}
+            </div>
+
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                aria-label="Thumbs up"
+                className={cn(
+                  "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
+                  feedback === "up" && "bg-green-50 text-feedback-success"
+                )}
+                onClick={() => setFeedback(turn.id, { sentiment: "up" })}
+              >
+                <ThumbsUp className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Thumbs down"
+                className={cn(
+                  "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
+                  feedback === "down" && "bg-red-50 text-feedback-danger"
+                )}
+                onClick={() => setFeedback(turn.id, { sentiment: "down" })}
+              >
+                <ThumbsDown className="size-3.5" />
+              </button>
             </div>
           </div>
         </AgentPlain>
