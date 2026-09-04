@@ -11,7 +11,7 @@ import { useAllyStore } from "@/store/ally-store";
 import type { ScopeContext } from "@/types";
 
 const chipTriggerClass =
-  "h-7 w-auto max-w-[220px] gap-1 rounded-full border-border-default bg-surface-muted px-2.5 text-xs font-medium shadow-none";
+  "h-7 w-auto max-w-[220px] gap-1 rounded-lg border-border-default bg-surface-muted px-2.5 text-xs font-medium shadow-none";
 
 const BRANDS = [
   "All brands",

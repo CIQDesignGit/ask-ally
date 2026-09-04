@@ -1,47 +1,107 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { GlobalToaster } from "@ciq-dev/ciq-design-system";
+import { Avatar, AvatarFallback, Button, GlobalToaster } from "@ciq-dev/ciq-design-system";
+import {
+  BarChart2,
+  HelpCircle,
+  Mail,
+  Bell,
+  Rocket,
+  Share2,
+} from "lucide-react";
+import { Outlet } from "react-router-dom";
 
 import { agentConfig } from "@/config/agent";
+import { useAllyStore } from "@/store/ally-store";
 
-const links = [
-  { to: "/chat", label: "Chat" },
-  { to: "/automations", label: "Automations" },
-  { to: "/settings", label: "Settings" },
-];
+import { AppSidebar } from "./AppSidebar";
 
 export function AppShell() {
+  const activeThreadId = useAllyStore((s) => s.activeThreadId);
+  const openDashboard = useAllyStore((s) => s.openDashboard);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-canvas">
-      <header className="flex h-12 shrink-0 items-center gap-6 border-b border-border-default bg-surface px-4">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border-default bg-surface px-4">
         <div className="flex items-center gap-2">
           <span className="flex size-7 items-center justify-center rounded-lg bg-brand-600 text-xs font-semibold text-white">
             {agentConfig.avatarFallback}
           </span>
           <span className="text-sm font-semibold text-fg-primary">
-            {agentConfig.name}
+            Ask Ally
           </span>
         </div>
-        <nav className="flex items-center gap-1" aria-label="Primary">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) =>
-                `rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 ${
-                  isActive
-                    ? "bg-brand-50 font-medium text-brand-800"
-                    : "text-fg-secondary hover:bg-surface-muted"
-                }`
-              }
-            >
-              {l.label}
-            </NavLink>
-          ))}
-        </nav>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Open dashboard"
+            title="Open dashboard"
+            disabled={!activeThreadId}
+            onClick={() => activeThreadId && openDashboard(activeThreadId)}
+          >
+            <BarChart2 className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Quick actions"
+            title="Coming soon"
+            disabled
+          >
+            <Rocket className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Notifications"
+            title="Coming soon"
+            disabled
+          >
+            <Bell className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Help"
+            title="Coming soon"
+            disabled
+          >
+            <HelpCircle className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Share"
+            title="Coming soon"
+            disabled
+          >
+            <Share2 className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Mail"
+            title="Coming soon"
+            disabled
+          >
+            <Mail className="size-4" />
+          </Button>
+          <Avatar className="ml-1 size-7">
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+        </div>
       </header>
-      <main className="min-h-0 flex-1">
-        <Outlet />
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <AppSidebar />
+        <main className="min-h-0 flex-1">
+          <Outlet />
+        </main>
+      </div>
       <GlobalToaster />
     </div>
   );

@@ -86,7 +86,6 @@ export function Messenger() {
 
         {/* Local "scoped" shell: chips + compact PromptInput */}
         <div className="rounded-3xl border border-border-default bg-surface p-3 shadow-sm">
-          <ScopeChips className="mb-2" />
           <PromptInput
             variant="compact"
             value={value}
@@ -145,6 +144,7 @@ export function Messenger() {
               </PromptInputSubmit>
             </PromptInputTrailing>
           </PromptInput>
+          <ScopeChips className="mt-2" />
         </div>
       </div>
     </div>
