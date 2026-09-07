@@ -583,15 +583,22 @@ export const useAllyStore = create<AllyState>()(
       version: 2,
       migrate: (persisted, version) => {
         const state = persisted as {
-          automations?: Record<string, unknown>[];
+          automations?: unknown;
           [key: string]: unknown;
         };
         if (version < 2 && Array.isArray(state.automations)) {
-          state.automations = state.automations.map((a) =>
-            normalizeAutomation(a)
-          );
+          return {
+            ...state,
+            automations: state.automations.map((a) =>
+              normalizeAutomation(
+                (a && typeof a === "object"
+                  ? a
+                  : {}) as Record<string, unknown>
+              )
+            ),
+          } as typeof persisted;
         }
-        return state as typeof persisted;
+        return persisted;
       },
       partialize: (s) => ({
         threads: s.threads,
