@@ -80,11 +80,14 @@ function tierForCategory(category: string): ScopeContext["tier"] {
 export function ScopeChips({
   className,
   leading,
+  trailing,
   scope: scopeProp,
   onScopeChange,
 }: {
   className?: string;
   leading?: ReactNode;
+  /** Right-aligned actions (e.g. send) */
+  trailing?: ReactNode;
   /** Controlled scope — when set with onScopeChange, does not touch global chat scope */
   scope?: ScopeContext;
   onScopeChange?: (patch: Partial<ScopeContext>) => void;
@@ -197,6 +200,7 @@ export function ScopeChips({
           <SelectItem value="vs_prior_year">vs prior year</SelectItem>
         </SelectContent>
       </Select>
+      {trailing ? <div className="ml-auto shrink-0">{trailing}</div> : null}
     </div>
   );
 }

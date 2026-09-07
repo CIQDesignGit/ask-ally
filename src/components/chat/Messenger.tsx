@@ -2,9 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   Button,
   PromptInput,
-  PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTrailing,
 } from "@ciq-dev/ciq-design-system";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 
@@ -23,6 +21,8 @@ export function Messenger() {
   const submitMessage = useAllyStore((s) => s.submitMessage);
   const stopGeneration = useAllyStore((s) => s.stopGeneration);
   const isRunning = useAllyStore((s) => s.isRunning);
+
+  const canSend = value.trim().length > 0 || files.length > 0;
 
   const onSubmit = useCallback(() => {
     if (isRunning) {
@@ -54,7 +54,7 @@ export function Messenger() {
 
   return (
     <div
-      className="bg-surface px-3 py-3"
+      className="bg-surface px-3 pt-3 pb-10"
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
@@ -93,25 +93,6 @@ export function Messenger() {
             className="border-0 shadow-none"
           >
             <PromptInputTextarea placeholder="Ask Ally about gap to plan, Buy Box, promos…" />
-            <PromptInputTrailing>
-              <PromptInputSubmit
-                aria-label={isRunning ? "Stop generating" : "Send"}
-                onClick={
-                  isRunning
-                    ? (e) => {
-                        e.preventDefault();
-                        stopGeneration();
-                      }
-                    : undefined
-                }
-              >
-                {isRunning ? (
-                  <Square className="size-3.5 fill-current" />
-                ) : (
-                  <ArrowUp />
-                )}
-              </PromptInputSubmit>
-            </PromptInputTrailing>
           </PromptInput>
           <ScopeChips
             className="mt-2"
@@ -143,6 +124,22 @@ export function Messenger() {
                   <Paperclip className="size-4" />
                 </Button>
               </>
+            }
+            trailing={
+              <Button
+                type="button"
+                size="icon"
+                aria-label={isRunning ? "Stop generating" : "Send"}
+                disabled={!isRunning && !canSend}
+                className="size-8 shrink-0 rounded-full bg-action-primary text-action-primary-fg shadow-none hover:bg-action-primary-hover disabled:opacity-40 [&_svg]:size-4"
+                onClick={onSubmit}
+              >
+                {isRunning ? (
+                  <Square className="size-3.5 fill-current" />
+                ) : (
+                  <ArrowUp />
+                )}
+              </Button>
             }
           />
         </div>
