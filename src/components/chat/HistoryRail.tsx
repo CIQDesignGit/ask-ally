@@ -1,104 +1,63 @@
 import { useMemo } from "react";
-import { Button } from "@ciq-dev/ciq-design-system";
-import { RefreshCw, Trash2 } from "lucide-react";
 
-import { startOfIsoWeek } from "@/lib/utils";
 import { useAllyStore } from "@/store/ally-store";
+
+/** Prefer the question portion of "question · period" titles. */
+function displayTitle(title: string): string {
+  const sep = title.indexOf(" · ");
+  return sep === -1 ? title : title.slice(0, sep);
+}
 
 export function HistoryRail() {
   const threads = useAllyStore((s) => s.threads);
   const activeThreadId = useAllyStore((s) => s.activeThreadId);
   const selectThread = useAllyStore((s) => s.selectThread);
-  const clearHistory = useAllyStore((s) => s.clearHistory);
-  const rerunThread = useAllyStore((s) => s.rerunThread);
 
-  // Ask once before wiping — hard to undo once localStorage is updated
-  const handleClearHistory = () => {
-    if (threads.length === 0) return;
-    const ok = window.confirm(
-      "Clear all conversation history? This cannot be undone."
-    );
-    if (ok) clearHistory();
-  };
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, typeof threads>();
-    for (const t of threads) {
-      const key = startOfIsoWeek(new Date(t.createdAt));
-      const list = map.get(key) ?? [];
-      list.push(t);
-      map.set(key, list);
-    }
-    return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [threads]);
+  const sorted = useMemo(
+    () =>
+      [...threads].sort((a, b) =>
+        a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0
+      ),
+    [threads]
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-border-default px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-fg-tertiary">
+      <div className="px-3 pt-4 pb-2">
+        <span className="type-caption-strong uppercase tracking-wide text-fg-tertiary">
           History
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
-        {grouped.length === 0 && (
-          <p className="px-2 py-4 text-xs text-fg-tertiary">
-            Conversations you start will show up here, grouped by week.
+
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        {sorted.length === 0 && (
+          <p className="px-2 py-6 text-center type-caption text-fg-tertiary">
+            Conversations you start will show up here.
           </p>
         )}
-        {grouped.map(([week, list]) => (
-          <div key={week} className="mb-3">
-            <div className="px-2 py-1 text-xs font-medium text-fg-tertiary">
-              Week of {week}
-            </div>
-            <ul className="space-y-0.5">
-              {list.map((t) => (
-                <li key={t.id}>
-                  <div
-                    className={`group flex items-start gap-1 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                      t.id === activeThreadId
-                        ? "bg-brand-50 text-brand-800"
-                        : "hover:bg-surface-muted"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
-                      onClick={() => selectThread(t.id)}
-                    >
-                      <div className="truncate font-medium">{t.title}</div>
-                      <div className="truncate text-xs text-fg-tertiary">
-                        {t.scope.period.label}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      title="Re-run for current period"
-                      aria-label="Re-run for current period"
-                      className="rounded p-1 opacity-0 transition-opacity hover:bg-white group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
-                      onClick={() => void rerunThread(t.id)}
-                    >
-                      <RefreshCw className="size-3.5 text-fg-secondary" />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
 
-      {/* Sticky footer action — temporary until we have per-thread delete */}
-      <div className="border-t border-border-default p-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full justify-start gap-2 text-fg-secondary hover:text-red-600"
-          disabled={threads.length === 0}
-          onClick={handleClearHistory}
-        >
-          <Trash2 className="size-3.5 shrink-0" />
-          Clear history
-        </Button>
+        <ul className="flex flex-col gap-1">
+          {sorted.map((t) => {
+            const isActive = t.id === activeThreadId;
+
+            return (
+              <li key={t.id}>
+                <button
+                  type="button"
+                      className={`w-full truncate rounded-md py-2 pr-2.5 text-left type-body transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
+                    isActive
+                      ? "text-fg-primary"
+                      : "text-fg-secondary hover:text-fg-primary"
+                  }`}
+                  onClick={() => selectThread(t.id)}
+                  title={t.title}
+                >
+                  {displayTitle(t.title)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

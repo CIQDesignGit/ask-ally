@@ -316,20 +316,49 @@ export interface KnownPreference {
   editable: true;
 }
 
+export interface AutomationSchedule {
+  freq: "daily" | "weekly";
+  time: string;
+  days?: string[];
+}
+
+/** One scheduled (or manual) execution of a recurring analysis */
+export interface AutomationRun {
+  id: string;
+  at: string;
+  status: "succeeded" | "failed";
+  summary: string;
+  viewedAt?: string;
+  answer?: AnswerPayload;
+}
+
+export interface AutomationCreateInput {
+  name: string;
+  question: string;
+  scope: ScopeContext;
+  schedule: AutomationSchedule;
+  notifyInApp?: boolean;
+  sourceThreadId?: string;
+}
+
+/** Recurring analysis Ally re-runs on a schedule */
 export interface Automation {
   id: string;
   name: string;
+  question: string;
   scope: ScopeContext;
-  checkDefinition: string;
-  schedule: { freq: "daily" | "weekly"; time: string; days?: string[] };
-  threshold: string;
-  channels: ("in_app" | "email" | "slack")[];
-  recipients: string[];
-  repeatPolicy: "notify_once_then_on_change" | "always_notify";
+  schedule: AutomationSchedule;
   status: "active" | "paused";
-  lastRun?: { at: string; result: "found" | "clean" | "failed"; summary: string };
-  runHistory: { at: string; result: "found" | "clean" | "failed"; summary: string }[];
+  notifyInApp: boolean;
+  nextRunAt?: string;
+  runHistory: AutomationRun[];
   sourceThreadId?: string;
+  /** @deprecated alert-era fields kept optional for chat draft activation */
+  checkDefinition?: string;
+  threshold?: string;
+  channels?: ("in_app" | "email" | "slack")[];
+  recipients?: string[];
+  repeatPolicy?: "notify_once_then_on_change" | "always_notify";
 }
 
 /** Fixture entry the runner pattern-matches against */

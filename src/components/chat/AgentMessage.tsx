@@ -61,7 +61,10 @@ export function UserMessage({ turn, scopeChips }: UserMessageProps) {
   return (
     <Message className="justify-end">
       <div className="flex max-w-[85%] flex-col items-end gap-1">
-        <MessageContent variant="user" className="max-w-full">
+        <MessageContent
+          variant="user"
+          className="max-w-full !rounded-lg !p-2 md:!p-2.5"
+        >
           {turn.input ?? ""}
         </MessageContent>
         {turn.attachments?.map((a) => (
@@ -72,7 +75,7 @@ export function UserMessage({ turn, scopeChips }: UserMessageProps) {
         {scopeChips.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1">
             {scopeChips.map((c) => (
-              <Chip key={c} message={c} className="bg-white/80" />
+              <Chip key={c} message={c} className="border-0 bg-slate-50" />
             ))}
           </div>
         )}

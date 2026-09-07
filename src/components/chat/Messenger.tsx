@@ -2,8 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import {
   Button,
   PromptInput,
-  PromptInputAction,
-  PromptInputLeading,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTrailing,
@@ -56,7 +54,7 @@ export function Messenger() {
 
   return (
     <div
-      className="border-t border-border-default bg-surface px-3 py-3"
+      className="bg-surface px-3 py-3"
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
@@ -68,7 +66,7 @@ export function Messenger() {
                 key={f.name}
                 className="inline-flex items-center gap-1 rounded-lg border border-border-default bg-surface-muted px-2 py-1 text-xs"
               >
-                {f.name} · {f.sizeKb} KB
+                {f.name}
                 <button
                   type="button"
                   aria-label={`Remove ${f.name}`}
@@ -85,7 +83,7 @@ export function Messenger() {
         )}
 
         {/* Local "scoped" shell: chips + compact PromptInput */}
-        <div className="rounded-3xl border border-border-default bg-surface p-3 shadow-sm">
+        <div className="rounded-xl border border-border-default bg-surface p-2.5 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-emerald-200)_40%,transparent),0_4px_24px_-4px_color-mix(in_srgb,var(--color-brand-400)_28%,transparent)]">
           <PromptInput
             variant="compact"
             value={value}
@@ -94,35 +92,6 @@ export function Messenger() {
             isLoading={isRunning}
             className="border-0 shadow-none"
           >
-            <PromptInputLeading>
-              <input
-                ref={fileRef}
-                type="file"
-                className="hidden"
-                accept=".csv,.xlsx,.xls"
-                onChange={(e) => {
-                  const list = Array.from(e.target.files ?? []);
-                  setFiles(
-                    list.map((f) => ({
-                      name: f.name,
-                      sizeKb: Math.max(1, Math.round(f.size / 1024)),
-                    }))
-                  );
-                }}
-              />
-              <PromptInputAction tooltip="Attach a file">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 shadow-none"
-                  aria-label="Attach file"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <Paperclip className="size-4" />
-                </Button>
-              </PromptInputAction>
-            </PromptInputLeading>
             <PromptInputTextarea placeholder="Ask Ally about gap to plan, Buy Box, promos…" />
             <PromptInputTrailing>
               <PromptInputSubmit
@@ -144,7 +113,38 @@ export function Messenger() {
               </PromptInputSubmit>
             </PromptInputTrailing>
           </PromptInput>
-          <ScopeChips className="mt-2" />
+          <ScopeChips
+            className="mt-2"
+            leading={
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  className="hidden"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => {
+                    const list = Array.from(e.target.files ?? []);
+                    setFiles(
+                      list.map((f) => ({
+                        name: f.name,
+                        sizeKb: Math.max(1, Math.round(f.size / 1024)),
+                      }))
+                    );
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0 rounded-lg shadow-none"
+                  aria-label="Attach file"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Paperclip className="size-4" />
+                </Button>
+              </>
+            }
+          />
         </div>
       </div>
     </div>

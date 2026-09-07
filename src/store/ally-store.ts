@@ -7,11 +7,19 @@ import {
   defaultScope,
   getFixtureById,
 } from "@/fixtures";
+import { buildDemoAutomations } from "@/fixtures/automation-seed";
+import {
+  buildSucceededRun,
+  computeNextRunAt,
+  normalizeAutomation,
+} from "@/lib/automation-utils";
+import { matchFixture } from "@/lib/match-intent";
 import { autoTitle } from "@/lib/utils";
 import type {
   AnswerPayload,
   AttachmentMeta,
   Automation,
+  AutomationCreateInput,
   AutomationDraft,
   FixtureEntry,
   KnownPreference,
@@ -61,12 +69,16 @@ interface AllyState {
   clearPreference: (id: string) => void;
 
   activateAutomation: (draft: AutomationDraft, threadId: string) => void;
+  createAutomation: (input: AutomationCreateInput) => string;
   pauseAutomation: (id: string) => void;
   resumeAutomation: (id: string) => void;
-  duplicateAutomation: (id: string) => void;
+  duplicateAutomation: (id: string) => string | null;
   deleteAutomation: (id: string) => void;
   runAutomationNow: (id: string) => void;
   updateAutomation: (id: string, patch: Partial<Automation>) => void;
+  markRunViewed: (automationId: string, runId: string) => void;
+  /** One-time demo seed when hub is empty (persists a local flag) */
+  seedDemoAutomationsIfNeeded: () => void;
 
   rerunThread: (threadId: string) => Promise<void>;
   openDashboard: (threadId: string) => void;
@@ -395,49 +407,81 @@ export const useAllyStore = create<AllyState>()(
         })),
 
       activateAutomation: (draft, threadId) => {
+        const schedule = draft.schedule;
         const automation: Automation = {
           id: uid("auto"),
           name: draft.name,
+          question: draft.checkDefinition,
           scope: { ...get().scope },
+          schedule,
+          status: "active",
+          notifyInApp: draft.channels.includes("in_app"),
+          nextRunAt: computeNextRunAt(schedule),
+          runHistory: [],
+          sourceThreadId: threadId,
           checkDefinition: draft.checkDefinition,
-          schedule: draft.schedule,
           threshold: draft.threshold,
           channels: draft.channels,
           recipients: draft.recipients,
           repeatPolicy: draft.repeatPolicy,
-          status: "active",
-          runHistory: [],
-          sourceThreadId: threadId,
         };
         set((s) => ({ automations: [automation, ...s.automations] }));
+      },
+
+      createAutomation: (input) => {
+        const id = uid("auto");
+        const automation: Automation = {
+          id,
+          name: input.name.trim() || "Recurring analysis",
+          question: input.question.trim(),
+          scope: { ...input.scope },
+          schedule: { ...input.schedule },
+          status: "active",
+          notifyInApp: input.notifyInApp ?? true,
+          nextRunAt: computeNextRunAt(input.schedule),
+          runHistory: [],
+          sourceThreadId: input.sourceThreadId,
+        };
+        set((s) => ({ automations: [automation, ...s.automations] }));
+        return id;
       },
 
       pauseAutomation: (id) =>
         set((s) => ({
           automations: s.automations.map((a) =>
-            a.id === id ? { ...a, status: "paused" } : a
+            a.id === id
+              ? { ...a, status: "paused", nextRunAt: undefined }
+              : a
           ),
         })),
 
       resumeAutomation: (id) =>
         set((s) => ({
           automations: s.automations.map((a) =>
-            a.id === id ? { ...a, status: "active" } : a
+            a.id === id
+              ? {
+                  ...a,
+                  status: "active",
+                  nextRunAt: computeNextRunAt(a.schedule),
+                }
+              : a
           ),
         })),
 
       duplicateAutomation: (id) => {
         const src = get().automations.find((a) => a.id === id);
-        if (!src) return;
+        if (!src) return null;
+        const copyId = uid("auto");
         const copy: Automation = {
           ...src,
-          id: uid("auto"),
+          id: copyId,
           name: `${src.name} (copy)`,
           status: "paused",
           runHistory: [],
-          lastRun: undefined,
+          nextRunAt: undefined,
         };
         set((s) => ({ automations: [copy, ...s.automations] }));
+        return copyId;
       },
 
       deleteAutomation: (id) =>
@@ -447,62 +491,70 @@ export const useAllyStore = create<AllyState>()(
 
       updateAutomation: (id, patch) =>
         set((s) => ({
-          automations: s.automations.map((a) =>
-            a.id === id ? { ...a, ...patch } : a
-          ),
+          automations: s.automations.map((a) => {
+            if (a.id !== id) return a;
+            const next = { ...a, ...patch };
+            if (patch.schedule && next.status === "active") {
+              next.nextRunAt = computeNextRunAt(next.schedule);
+            }
+            return next;
+          }),
         })),
+
+      markRunViewed: (automationId, runId) => {
+        const viewedAt = new Date().toISOString();
+        set((s) => ({
+          automations: s.automations.map((a) =>
+            a.id !== automationId
+              ? a
+              : {
+                  ...a,
+                  runHistory: a.runHistory.map((r) =>
+                    r.id === runId && !r.viewedAt ? { ...r, viewedAt } : r
+                  ),
+                }
+          ),
+        }));
+      },
+
+      seedDemoAutomationsIfNeeded: () => {
+        if (get().automations.length > 0) return;
+        try {
+          if (localStorage.getItem("ask-ally-auto-seed-v1")) return;
+          localStorage.setItem("ask-ally-auto-seed-v1", "1");
+        } catch {
+          return;
+        }
+        set({ automations: buildDemoAutomations() });
+      },
 
       runAutomationNow: (id) => {
         const auto = get().automations.find((a) => a.id === id);
         if (!auto) return;
-        const at = new Date().toISOString();
-        const result = {
-          at,
-          result: "found" as const,
-          summary: `Flagged 3 SKUs under MAP (simulated run of “${auto.name}”).`,
+
+        const fixture = matchFixture(auto.question);
+        const answer: AnswerPayload = {
+          ...fixture.answer,
+          scopeLine:
+            fixture.answer.scopeLine ??
+            `${auto.scope.retailer} · automated report · ${auto.name}`,
         };
+        const run = buildSucceededRun(answer, auto.name);
+        const nextRunAt =
+          auto.status === "active"
+            ? computeNextRunAt(auto.schedule)
+            : auto.nextRunAt;
 
         set((s) => ({
           automations: s.automations.map((a) =>
             a.id === id
               ? {
                   ...a,
-                  lastRun: result,
-                  runHistory: [result, ...a.runHistory],
+                  runHistory: [run, ...a.runHistory],
+                  nextRunAt,
                 }
               : a
           ),
-        }));
-
-        // Drop an in-app system turn into the source thread (or active)
-        const threadId = auto.sourceThreadId ?? get().activeThreadId;
-        if (!threadId || !auto.channels.includes("in_app")) return;
-
-        const answer: AnswerPayload = {
-          scopeLine: `${auto.scope.retailer} · automation run · ${auto.name}`,
-          headline: { value: "3 SKUs flagged", delta: "MAP >2% under floor", direction: "down" },
-          why: [
-            result.summary,
-            "Open the automations hub to pause, edit, or view full run history.",
-          ],
-          followups: [
-            { type: "pivot", label: "Adjust threshold", nextTurnId: "automation-map" },
-          ],
-        };
-
-        const turn: Turn = {
-          id: uid("turn"),
-          role: "system",
-          createdAt: at,
-          answer,
-        };
-
-        set((s) => ({
-          threads: patchThread(s.threads, threadId, (t) => ({
-            ...t,
-            updatedAt: at,
-            turns: [...t.turns, turn],
-          })),
         }));
       },
 
@@ -528,6 +580,19 @@ export const useAllyStore = create<AllyState>()(
     }),
     {
       name: "ask-ally-store",
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as {
+          automations?: Record<string, unknown>[];
+          [key: string]: unknown;
+        };
+        if (version < 2 && Array.isArray(state.automations)) {
+          state.automations = state.automations.map((a) =>
+            normalizeAutomation(a)
+          );
+        }
+        return state as typeof persisted;
+      },
       partialize: (s) => ({
         threads: s.threads,
         preferences: s.preferences,

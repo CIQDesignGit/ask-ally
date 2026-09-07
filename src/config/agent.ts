@@ -4,7 +4,8 @@
  */
 export const agentConfig = {
   name: "Ally",
-  tagline: "Conversational insights for ecommerce sales",
+  /** Landing hero when the chat has no messages yet */
+  welcomeTitle: "Hey, what would you like to work on today?",
   colorToken: "brand",
   /** Initials fallback for avatar */
   avatarFallback: "A",

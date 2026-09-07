@@ -5,13 +5,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ciq-dev/ciq-design-system";
+import type { ReactNode } from "react";
 
 import { currentPeriodScope, defaultScope } from "@/fixtures";
 import { useAllyStore } from "@/store/ally-store";
 import type { ScopeContext } from "@/types";
 
 const chipTriggerClass =
-  "h-7 w-auto max-w-[220px] gap-1 rounded-lg border-border-default bg-surface-muted px-2.5 text-xs font-medium shadow-none";
+  "h-7 w-auto max-w-[132px] gap-1 rounded-lg border-border-default bg-surface-muted px-2.5 text-xs font-medium shadow-none";
+
+/** Popper + top keeps each menu anchored above its chip (not item-aligned drift). */
+const chipSelectContentProps = {
+  side: "top" as const,
+  position: "popper" as const,
+  align: "start" as const,
+  sideOffset: 6,
+};
 
 const BRANDS = [
   "All brands",
@@ -68,9 +77,22 @@ function tierForCategory(category: string): ScopeContext["tier"] {
  * Interactive scope chips for the ask box.
  * Local workaround until CIQ PromptInput gets a `scoped` variant — see docs/CIQ_DS_CHANGELOG.md
  */
-export function ScopeChips({ className }: { className?: string }) {
-  const scope = useAllyStore((s) => s.scope);
-  const setScope = useAllyStore((s) => s.setScope);
+export function ScopeChips({
+  className,
+  leading,
+  scope: scopeProp,
+  onScopeChange,
+}: {
+  className?: string;
+  leading?: ReactNode;
+  /** Controlled scope — when set with onScopeChange, does not touch global chat scope */
+  scope?: ScopeContext;
+  onScopeChange?: (patch: Partial<ScopeContext>) => void;
+}) {
+  const storeScope = useAllyStore((s) => s.scope);
+  const setStoreScope = useAllyStore((s) => s.setScope);
+  const scope = scopeProp ?? storeScope;
+  const setScope = onScopeChange ?? setStoreScope;
   const categoryValue = pathToCategory(scope.taxonomyPath);
   const brandValue = scope.brand || "All brands";
 
@@ -80,6 +102,7 @@ export function ScopeChips({ className }: { className?: string }) {
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
+      {leading}
       <Select
         value={scope.retailer}
         onValueChange={(v) => setScope({ retailer: v })}
@@ -87,7 +110,7 @@ export function ScopeChips({ className }: { className?: string }) {
         <SelectTrigger className={chipTriggerClass} size="sm">
           <SelectValue placeholder="Retailer" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...chipSelectContentProps}>
           <SelectItem value="Amazon US">Amazon US</SelectItem>
           <SelectItem value="Amazon CA">Amazon CA</SelectItem>
           <SelectItem value="Walmart US">Walmart US</SelectItem>
@@ -106,7 +129,7 @@ export function ScopeChips({ className }: { className?: string }) {
         <SelectTrigger className={chipTriggerClass} size="sm">
           <SelectValue placeholder="Brand" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...chipSelectContentProps}>
           {BRANDS.map((b) => (
             <SelectItem key={b} value={b}>
               {b}
@@ -127,7 +150,7 @@ export function ScopeChips({ className }: { className?: string }) {
         <SelectTrigger className={chipTriggerClass} size="sm">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...chipSelectContentProps}>
           {CATEGORIES.map((c) => (
             <SelectItem key={c} value={c}>
               {c}
@@ -149,7 +172,7 @@ export function ScopeChips({ className }: { className?: string }) {
         <SelectTrigger className={chipTriggerClass} size="sm">
           <SelectValue placeholder="Period" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...chipSelectContentProps}>
           <SelectItem value={defaultScope.period.label}>
             {defaultScope.period.label}
           </SelectItem>
@@ -168,7 +191,7 @@ export function ScopeChips({ className }: { className?: string }) {
         <SelectTrigger className={chipTriggerClass} size="sm">
           <SelectValue placeholder="Comparison" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...chipSelectContentProps}>
           <SelectItem value="vs_plan">vs plan</SelectItem>
           <SelectItem value="vs_prior_period">vs prior period</SelectItem>
           <SelectItem value="vs_prior_year">vs prior year</SelectItem>

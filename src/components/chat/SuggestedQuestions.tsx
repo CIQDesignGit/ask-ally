@@ -1,4 +1,4 @@
-import { Button, EmptyState } from "@ciq-dev/ciq-design-system";
+import { Button } from "@ciq-dev/ciq-design-system";
 import { Activity, ChartNoAxesCombined } from "lucide-react";
 
 import { agentConfig } from "@/config/agent";
@@ -13,10 +13,10 @@ export function SuggestedQuestions() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center px-4 py-10 sm:py-12">
-      <EmptyState
-        title={`Ask ${agentConfig.name}`}
-        description={agentConfig.tagline}
-      />
+      {/* Real H1 — EmptyState only renders a div, so we skip it for the hero */}
+      <h1 className="type-heading text-center text-fg-primary">
+        {agentConfig.welcomeTitle}
+      </h1>
 
       <div className="mt-8 grid w-full gap-4 sm:grid-cols-3">
         {suggestedQuestionGroups.map((group, index) => {
