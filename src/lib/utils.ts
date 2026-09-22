@@ -39,6 +39,11 @@ export function formatScopeChips(scope: {
   ];
 }
 
+/** Drop `**` emphasis markers so answer copy can be streamed as plain text. */
+export function stripEmphasis(text: string): string {
+  return text.replace(/\*\*/g, "");
+}
+
 export function autoTitle(question: string, scopeLabel: string): string {
   const q = question.trim().slice(0, 48);
   return q.length < question.trim().length ? `${q}… · ${scopeLabel}` : `${q} · ${scopeLabel}`;

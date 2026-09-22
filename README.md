@@ -25,7 +25,8 @@ Open the URL Vite prints (usually http://localhost:5173).
 
 ## Try these prompts
 
-- “Where am I missing plan this week?” — Fixture A (bridge chart)
+- “Run Gap to plan analysis for the entire portfolio” — dedicated report template
+- “Which categories did not meet last week's plan?” — category gap table
 - “Why did Skin Care miss?” — ranked bars drill
 - “Which SKUs have chronic Buy Box loss?” — heat strip
 - “Promo compliance status for Skin Care” — status board

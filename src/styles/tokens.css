@@ -48,11 +48,12 @@
   --action-danger-fg: var(--color-white);
 
   /* --- Tier 2: feedback (status) — same in light and dark --- */
-  --feedback-success: var(--color-green-600);
-  --feedback-success-strong: var(--color-green-500);
-  --feedback-success-border: var(--color-green-200);
-  --feedback-success-muted: var(--color-green-100);
-  --feedback-success-subtle: var(--color-green-50);
+  /* Success / healthy state is emerald, not Tailwind green. */
+  --feedback-success: var(--color-emerald-600);
+  --feedback-success-strong: var(--color-emerald-500);
+  --feedback-success-border: var(--color-emerald-200);
+  --feedback-success-muted: var(--color-emerald-100);
+  --feedback-success-subtle: var(--color-emerald-50);
   --feedback-warning: var(--color-amber-600);
   --feedback-warning-muted: var(--color-amber-100);
   --feedback-warning-subtle: var(--color-amber-50);

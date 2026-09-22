@@ -1,18 +1,23 @@
 import type { AnswerSection } from "@/types";
 
 import { ActionLog } from "./ActionLog";
+import { ActionRecommendations } from "./ActionRecommendations";
+import { AnalysisPanel } from "./AnalysisPanel";
 import { AnswerTable } from "./AnswerTable";
 import { ChangeLogCard } from "./ChangeLogCard";
 import { Checklist } from "./Checklist";
 import { CompareStrip } from "./CompareStrip";
 import { DashboardPreviewCard } from "./DashboardPreviewCard";
 import { InsightCallout } from "./InsightCallout";
+import { IssueBreakdown } from "./IssueBreakdown";
 import { RecommendationCards } from "./RecommendationCards";
 import { ScorecardRow } from "./ScorecardRow";
 import { SectionCard } from "./SectionCard";
 import { SeverityGroups } from "./SeverityGroups";
+import { TrendChart } from "./TrendChart";
 import { VisualBlockView } from "./VisualBlockView";
 import { WeekdayPattern } from "./WeekdayPattern";
+import { WeeklyNotes } from "./WeeklyNotes";
 
 interface AnswerSectionsProps {
   sections: AnswerSection[];
@@ -71,12 +76,18 @@ export function AnswerSections({
             );
           case "narrative":
             return (
-              <p
-                key={section.id}
-                className="text-sm leading-relaxed text-fg-secondary"
-              >
-                {section.body}
-              </p>
+              <div key={section.id} className="space-y-1.5">
+                {section.title ? (
+                  <h3 className="text-sm font-semibold text-fg-primary">
+                    {section.title}
+                  </h3>
+                ) : null}
+                {section.body ? (
+                  <p className="text-sm leading-relaxed text-fg-secondary">
+                    {section.body}
+                  </p>
+                ) : null}
+              </div>
             );
           case "visual":
             return (
@@ -126,6 +137,36 @@ export function AnswerSections({
                 widgets={section.widgets}
                 openLabel={section.openLabel}
                 onOpen={onOpenDashboard}
+              />
+            );
+          case "analysisPanel":
+            return <AnalysisPanel key={section.id} panel={section.panel} />;
+          case "issueBreakdown":
+            return (
+              <IssueBreakdown
+                key={section.id}
+                title={section.title}
+                items={section.items}
+              />
+            );
+          case "trendChart":
+            return (
+              <TrendChart
+                key={section.id}
+                title={section.title}
+                points={section.points}
+                actualLabel={section.actualLabel}
+                planLabel={section.planLabel}
+              />
+            );
+          case "weeklyNotes":
+            return <WeeklyNotes key={section.id} notes={section.notes} />;
+          case "actionRecommendations":
+            return (
+              <ActionRecommendations
+                key={section.id}
+                title={section.title}
+                items={section.items}
               />
             );
           default:

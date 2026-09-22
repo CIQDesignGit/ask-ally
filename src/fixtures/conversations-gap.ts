@@ -111,10 +111,8 @@ export const gapCategories: FixtureEntry = {
   match: [
     "which categories did not meet",
     "categories did not meet last week's plan",
-    "gap to plan analysis for the entire portfolio",
-    "missing plan",
-    "gap to plan",
-    "run gap to plan",
+    "missing plan this week",
+    "where am i missing plan",
   ],
   thinkingSteps: [
     "Loading Week 34 attainment vs plan",
@@ -186,6 +184,308 @@ export const gapCategories: FixtureEntry = {
     sources: [
       { label: "Attainment cube", refId: "att_w34" },
       { label: "Finance forecast v3", refId: "fcst_v3" },
+    ],
+  },
+};
+
+/**
+ * Dedicated portfolio gap-to-plan analysis report template.
+ * Triggered by “Run Gap to plan analysis for the entire portfolio”.
+ */
+export const portfolioGapAnalysis: FixtureEntry = {
+  id: "portfolio-gap-analysis",
+  match: [
+    "run gap to plan analysis",
+    "gap to plan analysis for the entire portfolio",
+    "run gap to plan",
+    "portfolio gap to plan",
+  ],
+  thinkingSteps: [
+    "Loading portfolio attainment vs plan for focal week",
+    "Decomposing traffic · conversion · price (ecommerce equation)",
+    "Ranking brand-level issues and building 8-week trend",
+  ],
+  scopePatch: {
+    period: {
+      label: "Week of Aug 30–Sep 5",
+      start: "2026-08-30",
+      end: "2026-09-05",
+    },
+    comparison: "vs_plan",
+    asOf: "2026-09-06T08:00:00-07:00",
+  },
+  answer: {
+    scopeLine:
+      "Amazon US · Week of Aug 30–Sep 5 vs plan · vs comparison week Aug 23–29",
+    headline: {
+      value: "−$1.1M",
+      delta: "96% attainment",
+      direction: "down",
+    },
+    why: [
+      "The portfolio missed plan by **$1.1M** last week, but the gap closed sharply — and mostly because Finance **stepped the plan down $1.6M**, not because demand recovered. **Shark** carries almost all of what is left, and a near-even split of SKUs ahead of and behind plan means this net number hides a lot of internal churn.",
+    ],
+    /** Fixed Gap to Plan report template (alerts-V2 FullRcaReport structure) */
+    gapToPlanReport: {
+      level: "overall",
+      title: "Portfolio Gap to Plan",
+      subtitle: "Amazon US · Week of Aug 30–Sep 5, 2026 · vs comparison week Aug 23–29",
+      verdict: {
+        gapValue: "−$1.1M",
+        gapDirection: "down",
+        attainmentPct: 96.0,
+        actualValue: "$27.3M",
+        planValue: "$28.4M",
+        changeNote: "Narrowed $1.55M from −$2.7M",
+        changeTone: "positive",
+      },
+      planVsActual: {
+        title: "Plan vs actual",
+        summary: "96.0% · −$1.1M",
+        // Chronological — the row reads left to right as a timeline.
+        rows: [
+          {
+            label: "Week before",
+            caption: "Aug 23 – 29",
+            actual: "$27.2M",
+            plan: "$29.9M",
+            gap: "−$2.7M",
+            attainment: "91.0%",
+            actualValue: 27_170_709,
+            planValue: 29_852_925,
+          },
+          {
+            label: "Last week",
+            caption: "Aug 30 – Sep 5",
+            actual: "$27.3M",
+            plan: "$28.4M",
+            gap: "−$1.1M",
+            attainment: "96.0%",
+            actualValue: 27_285_495,
+            planValue: 28_413_071,
+          },
+          {
+            label: "This week so far",
+            caption: "Sep 6 onward",
+            actual: "—",
+            plan: "—",
+            gap: "—",
+            pending: true,
+          },
+        ],
+        footer:
+          "The plan stepped down by $1.6M week-over-week, which is why the gap narrowed even though actuals were essentially flat.",
+      },
+      drivers: {
+        title: "Quick Ecommerce Equation Breakdown",
+        contributions: [
+          {
+            label: "Price",
+            value: "+$559K",
+            impact: 559_000,
+            note: "ASP +$2.82",
+          },
+          {
+            label: "Traffic",
+            value: "+$228K",
+            impact: 228_000,
+            note: "+61.5K views",
+          },
+          {
+            label: "Conversion",
+            value: "−$312K",
+            impact: -312_000,
+            note: "−4 bps",
+          },
+        ],
+        metrics: [
+          {
+            label: "PDP Views",
+            prior: "7,251,626",
+            current: "7,313,144",
+            delta: "+61,518",
+            tone: "positive",
+          },
+          {
+            label: "Conversion Rate",
+            prior: "2.73%",
+            current: "2.69%",
+            delta: "−4 bps",
+            tone: "negative",
+          },
+          {
+            label: "Avg Selling Price",
+            prior: "$135.55",
+            current: "$138.37",
+            delta: "+$2.82",
+            tone: "positive",
+          },
+        ],
+        footer:
+          "Price was the biggest mover and traffic helped, but conversion gave back more than traffic added. Net: the gap narrowed because the plan came down, not because demand surged. The conversion slide is now five weeks old and is the trend worth watching.",
+      },
+      issues: {
+        title: "Top issues — by brand",
+        summary: "1 critical · 1 watch",
+        items: [
+          {
+            title:
+              "Shark is −$910K under plan and has been behind for eight straight weeks",
+            value: "−$910K",
+            magnitude: 910_000,
+            meta: "8 weeks behind",
+            statusLabel: "Still an issue",
+            statusTone: "danger",
+            body: "Shark alone accounts for most of the residual miss. Eight consecutive weeks behind makes this a structural shortfall, not a one-week event. Run a brand-level gap to plan on Shark to find which categories and SKUs are carrying it.",
+          },
+          {
+            title: "Ninja closed most of its gap — down to −$220K from −$1.8M",
+            value: "−$220K",
+            magnitude: 220_000,
+            meta: "recovered from −$1.8M",
+            statusLabel: "Worth watching",
+            statusTone: "warning",
+            body: "Ninja recovered hard week-over-week. Confirm the recovery holds before treating it as resolved — one strong week after a deep miss is not yet a trend.",
+          },
+          {
+            title: 'The "other" catch-all is nearly at plan',
+            value: "−$17K",
+            magnitude: 17_000,
+            meta: "essentially on plan",
+            statusTone: "neutral",
+            body: "Remainder of the portfolio is essentially on plan. No action needed unless a brand inside the catch-all starts drifting.",
+          },
+        ],
+      },
+      trend: {
+        title: "8-week revenue trend",
+        summary: "8 weeks behind plan",
+        points: [
+          { label: "Jul 12", actual: 24_800_000, plan: 24_900_000 },
+          { label: "Jul 19", actual: 23_200_000, plan: 27_100_000 },
+          { label: "Jul 26", actual: 25_400_000, plan: 28_600_000 },
+          { label: "Aug 2", actual: 26_100_000, plan: 29_200_000 },
+          { label: "Aug 9", actual: 27_800_000, plan: 30_400_000 },
+          { label: "Aug 16", actual: 26_900_000, plan: 30_100_000 },
+          { label: "Aug 23", actual: 27_170_000, plan: 29_850_000 },
+          { label: "Aug 30", actual: 27_285_000, plan: 28_413_000 },
+        ],
+        notes: [
+          {
+            date: "Jul 12",
+            actual: "$24.8M",
+            plan: "$24.9M",
+            gap: "+$132K",
+            tone: "positive",
+            body: "Nearly flat to plan at roughly 100% attainment. Traffic and conversion both held; no marketplace events of note.",
+          },
+          {
+            date: "Jul 19",
+            actual: "$23.2M",
+            plan: "$27.1M",
+            gap: "−$3.9M",
+            tone: "negative",
+            body: "Widest miss of the window. Traffic fell to 5.3M views and conversion slipped from 3.42% to 3.30%. The plan moving up produced the widest miss.",
+          },
+          {
+            date: "Jul 26",
+            actual: "$25.4M",
+            plan: "$28.6M",
+            gap: "−$3.2M",
+            tone: "negative",
+            body: "Partial rebound in views, but conversion stayed soft. Price slightly lower week-over-week.",
+          },
+          {
+            date: "Aug 2",
+            actual: "$26.1M",
+            plan: "$29.2M",
+            gap: "−$3.1M",
+            tone: "negative",
+            body: "Actuals climbed, but the plan climbed with them. Shark's structural shortfall started to dominate the brand mix.",
+          },
+          {
+            date: "Aug 9",
+            actual: "$27.8M",
+            plan: "$30.4M",
+            gap: "−$2.6M",
+            tone: "negative",
+            body: "Best absolute actuals in the window, still short of an elevated plan. Conversion remained the soft undercurrent.",
+          },
+          {
+            date: "Aug 16",
+            actual: "$26.9M",
+            plan: "$30.1M",
+            gap: "−$3.2M",
+            tone: "negative",
+            body: "Slight pullback in actuals; plan barely moved. Gap widened again as conversion slipped further.",
+          },
+          {
+            date: "Aug 23",
+            actual: "$27.2M",
+            plan: "$29.9M",
+            gap: "−$2.7M",
+            tone: "negative",
+            body: "Ninja recovery began to show. Portfolio gap narrowed vs prior week but remained large in absolute dollars.",
+          },
+          {
+            date: "Aug 30",
+            actual: "$27.3M",
+            plan: "$28.4M",
+            gap: "−$1.1M",
+            tone: "negative",
+            body: "Gap narrowed primarily because the plan stepped down $1.6M week-over-week — actuals were essentially flat. Price was the biggest ecommerce driver; conversion at 2.69% from 2.73% remains the five-week trend to watch.",
+          },
+        ],
+      },
+      recommendations: {
+        title: "Recommended next steps",
+        summary: "4 actions",
+        items: [
+          {
+            title: "Run a brand deep dive on Shark",
+            body: "Shark is −$910K under plan for eight straight weeks. Isolate which categories and SKUs are carrying the miss before changing media or pricing.",
+          },
+          {
+            title: "Investigate the five-week conversion slide",
+            body: "Conversion has slipped from the mid-3%s toward 2.69%. Quantify how much is traffic mix vs PDP experience vs Buy Box / availability so the next lever is clear.",
+          },
+          {
+            title: "Verify Ninja's recovery holds another week",
+            body: "Ninja closed from −$1.8M to −$220K. Confirm the rebound persists before reallocating attention away from it.",
+          },
+          {
+            title: "Revisit plan step-downs with Finance",
+            body: "Last week's gap improved mainly because the plan came down $1.6M, not because demand surged. Align on whether further plan cuts are masking soft conversion.",
+          },
+        ],
+      },
+    },
+    followups: [
+      {
+        type: "drill",
+        label: "Run a brand-level gap to plan on Shark",
+        nextTurnId: "skin-care-drivers",
+      },
+      {
+        type: "drill",
+        label: "Which categories did not meet last week's plan?",
+        nextTurnId: "gap-categories",
+      },
+      {
+        type: "pivot",
+        label: "Do a week-on-week analysis for the entire portfolio",
+        nextTurnId: "wow-portfolio",
+      },
+      {
+        type: "pivot",
+        label: "Alert me if the portfolio gap widens past $2M again",
+        nextTurnId: "automation-map",
+      },
+    ],
+    sources: [
+      { label: "Attainment cube", refId: "att_w36" },
+      { label: "Finance forecast v3", refId: "fcst_v3" },
+      { label: "Traffic & conversion cube", refId: "tconv_w36" },
     ],
   },
 };

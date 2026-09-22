@@ -132,6 +132,25 @@ function applyFixtureScope(
   };
 }
 
+/** A gap-to-plan report is only renderable if it carries the verdict block. */
+function stripLegacyGapReport(thread: unknown): unknown {
+  if (!thread || typeof thread !== "object") return thread;
+  const t = thread as { turns?: unknown };
+  if (!Array.isArray(t.turns)) return thread;
+
+  return {
+    ...t,
+    turns: t.turns.map((turn) => {
+      const answer = (turn as { answer?: Record<string, unknown> })?.answer;
+      const report = answer?.gapToPlanReport as Record<string, unknown> | undefined;
+      if (!report || "verdict" in report) return turn;
+
+      const { gapToPlanReport: _legacy, ...rest } = answer!;
+      return { ...(turn as object), answer: rest };
+    }),
+  };
+}
+
 export const useAllyStore = create<AllyState>()(
   persist(
     (set, get) => ({
@@ -580,14 +599,15 @@ export const useAllyStore = create<AllyState>()(
     }),
     {
       name: "ask-ally-store",
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
-        const state = persisted as {
+        let state = persisted as {
           automations?: unknown;
+          threads?: unknown;
           [key: string]: unknown;
         };
         if (version < 2 && Array.isArray(state.automations)) {
-          return {
+          state = {
             ...state,
             automations: state.automations.map((a) =>
               normalizeAutomation(
@@ -596,9 +616,15 @@ export const useAllyStore = create<AllyState>()(
                   : {}) as Record<string, unknown>
               )
             ),
-          } as typeof persisted;
+          };
         }
-        return persisted;
+        // v3 reshaped the gap-to-plan report. Drop reports saved in the old
+        // shape so stored turns fall back to their text answer instead of
+        // rendering against fields that no longer exist.
+        if (version < 3 && Array.isArray(state.threads)) {
+          state = { ...state, threads: state.threads.map(stripLegacyGapReport) };
+        }
+        return state as typeof persisted;
       },
       partialize: (s) => ({
         threads: s.threads,

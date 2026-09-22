@@ -7,6 +7,7 @@ export {
   currentPeriodScope,
   suggestedQuestionGroups,
   gapCategories,
+  portfolioGapAnalysis,
   skinCareDrivers,
   campaignBudgetCut,
   babyCareAvailability,
@@ -43,6 +44,7 @@ import {
   campaignBudgetCut,
   chronicBb90d,
   gapCategories,
+  portfolioGapAnalysis,
   skinCareDrivers,
 } from "./conversations-gap";
 import {
@@ -64,7 +66,7 @@ import { wowPortfolio, wowSerumsSkus, wowSkinCare } from "./conversations-wow";
 
 /** Legacy id alias so older chips / docs still resolve */
 const gapToPlanAlias: FixtureEntry = {
-  ...gapCategories,
+  ...portfolioGapAnalysis,
   id: "gap-to-plan",
   match: ["__alias_gap_to_plan__"],
 };
@@ -94,6 +96,7 @@ const dashboardGapAlias: FixtureEntry = {
 };
 
 export const fixtures: FixtureEntry[] = [
+  portfolioGapAnalysis,
   gapCategories,
   gapToPlanAlias,
   skinCareDrivers,

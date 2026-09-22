@@ -11,6 +11,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { AnswerSections } from "@/components/answer/AnswerSections";
 import { AssumptionChip } from "@/components/answer/AssumptionChip";
 import { FollowupChips } from "@/components/answer/FollowupChips";
+import { GapToPlanReport } from "@/components/answer/GapToPlanReport";
 import { HeroStatTile } from "@/components/answer/HeroStatTile";
 import { TradeoffCard } from "@/components/answer/TradeoffCard";
 import { WhyList } from "@/components/answer/WhyList";
@@ -24,7 +25,7 @@ import { DisambiguationPrompt } from "@/components/overlays/DisambiguationPrompt
 import { InlineBanner } from "@/components/overlays/InlineBanner";
 import { InterpretationEchoCard } from "@/components/overlays/InterpretationEchoCard";
 import { useTypewriter } from "@/hooks/useTypewriter";
-import { prefersReducedMotion } from "@/lib/utils";
+import { prefersReducedMotion, stripEmphasis } from "@/lib/utils";
 import { useAllyStore } from "@/store/ally-store";
 import type { Turn } from "@/types";
 
@@ -103,8 +104,9 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
   const reduced = prefersReducedMotion();
 
   const answer = turn.answer;
-  const whyText = answer?.why?.join(" ") ?? "";
+  const whyText = stripEmphasis(answer?.why?.join(" ") ?? "");
   const shouldStream = Boolean(answer) && isLast && !reduced;
+  const hasGapToPlanReport = Boolean(answer?.gapToPlanReport);
   const hasSections = Boolean(answer?.sections?.length);
 
   const {
@@ -169,27 +171,55 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
               />
             ) : null}
 
-            <div className="flex items-start gap-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-fg-tertiary">
-                {answer.scopeLine}
+            {/* Gap to Plan uses a dedicated report card (header lives inside it) */}
+            {!hasGapToPlanReport ? (
+              <div className="flex items-start gap-3">
+                {answer.reportTitle ? (
+                  <div className="space-y-1">
+                    <h2 className="text-lg font-semibold tracking-tight text-fg-primary">
+                      {answer.reportTitle}
+                    </h2>
+                    {answer.reportSubtitle ? (
+                      <p className="text-sm text-fg-secondary">
+                        {answer.reportSubtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-fg-tertiary">
+                    {answer.scopeLine}
+                  </div>
+                )}
               </div>
-            </div>
+            ) : null}
 
             <div className="space-y-5">
               {answer.interpretationEcho ? (
                 <InterpretationEchoCard {...answer.interpretationEcho} />
               ) : null}
 
-              {whyText ? (
+              {hasGapToPlanReport && answer.gapToPlanReport ? (
+                <GapToPlanReport
+                  report={answer.gapToPlanReport}
+                  keyFinding={answer.why}
+                  streaming={shouldStream && !streamDone}
+                  streamingText={streamedWhy}
+                  onSkipStream={skip}
+                  showAnalysis={streamDone}
+                />
+              ) : null}
+
+              {!hasGapToPlanReport && whyText ? (
                 <WhyList
                   bullets={answer.why}
                   streaming={shouldStream && !streamDone}
                   streamingText={streamedWhy}
                   onSkip={skip}
+                  label={answer.reportTitle ? "Key finding" : undefined}
                 />
               ) : null}
 
-              {streamDone && hasSections ? (
+              {streamDone && !hasGapToPlanReport && hasSections ? (
                 <AnswerSections
                   sections={answer.sections!}
                   ready={streamDone}
@@ -207,7 +237,10 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
                   ))
                 : null}
 
-              {streamDone && !hasSections && answer.headline.value ? (
+              {streamDone &&
+              !hasGapToPlanReport &&
+              !hasSections &&
+              answer.headline.value ? (
                 <div className="grid gap-3 md:grid-cols-[220px_1fr]">
                   <HeroStatTile
                     value={answer.headline.value}
@@ -221,13 +254,17 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
               ) : null}
 
               {streamDone &&
+              !hasGapToPlanReport &&
               !hasSections &&
               answer.visual &&
               !answer.headline.value ? (
                 <VisualBlockView visual={answer.visual} ready />
               ) : null}
 
-              {streamDone && !hasSections && answer.table ? (
+              {streamDone &&
+              !hasGapToPlanReport &&
+              !hasSections &&
+              answer.table ? (
                 <DetailTable
                   columns={answer.table.columns}
                   rows={answer.table.rows}

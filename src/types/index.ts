@@ -171,6 +171,168 @@ export interface ActionLogRow {
   status: "done" | "mixed" | "waiting" | "failed";
 }
 
+/** Collapsible scorecard + table block used in gap-to-plan report */
+export interface AnalysisPanelData {
+  title: string;
+  tiles: ScorecardTile[];
+  table: AnswerTableData;
+  /** Footnote under the table */
+  footer?: string;
+  defaultExpanded?: boolean;
+}
+
+export type IssueStatusTone = "danger" | "warning" | "neutral" | "success";
+
+export interface IssueBreakdownItem {
+  title: string;
+  body: string;
+  statusLabel?: string;
+  statusTone?: IssueStatusTone;
+  defaultExpanded?: boolean;
+}
+
+export interface TrendSeriesPoint {
+  label: string;
+  actual: number;
+  plan: number;
+}
+
+export interface WeeklyNote {
+  /** Week start label, e.g. "Jul 12" */
+  date: string;
+  /** Bold lead metrics line */
+  summary: string;
+  body: string;
+}
+
+export interface ActionRecommendation {
+  title: string;
+  body: string;
+}
+
+/**
+ * Fixed Gap to Plan analysis report template
+ * (structure mirrors alerts-V2 FullRcaReport).
+ * Used when the user asks “Run Gap to plan analysis for …”.
+ *
+ * Every figure carries a numeric sibling so the UI can encode magnitude
+ * as bars instead of printing another wall of numbers.
+ */
+export type GapToPlanScopeLevel = "overall" | "brand" | "category" | "sku";
+
+export type GapTone = "positive" | "negative" | "neutral";
+
+/** Headline verdict — the numbers that earn the largest type on screen */
+export interface GapToPlanVerdict {
+  gapValue: string;
+  gapDirection: "up" | "down";
+  attainmentPct: number;
+  actualValue: string;
+  planValue: string;
+  /** Week-over-week movement, e.g. “Narrowed $1.55M from −$2.7M” */
+  changeNote?: string;
+  changeTone?: GapTone;
+}
+
+/** Two offsetting populations rendered as one diverging bar */
+export interface GapSplit {
+  label: string;
+  left: { label: string; value: string; magnitude: number };
+  right: { label: string; value: string; magnitude: number };
+}
+
+export interface GapPeriodRow {
+  label: string;
+  caption?: string;
+  actual: string;
+  plan: string;
+  gap: string;
+  attainment?: string;
+  /** Drives the bar; omit with `pending` for in-flight weeks */
+  actualValue?: number;
+  planValue?: number;
+  pending?: boolean;
+}
+
+export interface GapDriverContribution {
+  label: string;
+  value: string;
+  /** Signed dollar impact — drives the diverging bar */
+  impact: number;
+  note?: string;
+}
+
+export interface GapDriverMetric {
+  label: string;
+  prior: string;
+  current: string;
+  delta: string;
+  tone?: GapTone;
+}
+
+export interface GapIssueItem {
+  title: string;
+  body: string;
+  value?: string;
+  /** Absolute dollars — drives the inline magnitude bar */
+  magnitude?: number;
+  /** Streak / context line, e.g. “8 weeks behind” */
+  meta?: string;
+  statusLabel?: string;
+  statusTone?: IssueStatusTone;
+}
+
+/** One week in the trend log — collapsed to a single row until opened */
+export interface GapWeekNote {
+  date: string;
+  actual: string;
+  plan: string;
+  gap: string;
+  tone?: GapTone;
+  body: string;
+}
+
+export interface GapToPlanReportData {
+  title: string;
+  subtitle: string;
+  level?: GapToPlanScopeLevel;
+  verdict: GapToPlanVerdict;
+  /** Offsetting SKU populations behind the net gap */
+  split?: GapSplit;
+  planVsActual: {
+    title?: string;
+    /** Shown on the collapsed row so it stays useful closed */
+    summary?: string;
+    rows: GapPeriodRow[];
+    footer?: string;
+  };
+  drivers: {
+    title?: string;
+    summary?: string;
+    contributions: GapDriverContribution[];
+    metrics: GapDriverMetric[];
+    footer?: string;
+  };
+  issues: {
+    title?: string;
+    summary?: string;
+    items: GapIssueItem[];
+  };
+  trend: {
+    title?: string;
+    summary?: string;
+    points: TrendSeriesPoint[];
+    actualLabel?: string;
+    planLabel?: string;
+    notes?: GapWeekNote[];
+  };
+  recommendations: {
+    title?: string;
+    summary?: string;
+    items: ActionRecommendation[];
+  };
+}
+
 /** Composable rich sections inside an Ally answer */
 export type AnswerSection =
   | {
@@ -208,6 +370,7 @@ export type AnswerSection =
       id: string;
       /** Plain insight paragraph between metrics and table */
       kind: "narrative";
+      title?: string;
       body: string;
     }
   | {
@@ -264,12 +427,56 @@ export type AnswerSection =
       title?: string;
       widgets: { name: string; description: string }[];
       openLabel?: string;
+    }
+  | {
+      id: string;
+      /** Gap-to-plan supporting analysis accordion (metrics + table + footer) */
+      kind: "analysisPanel";
+      panel: AnalysisPanelData;
+    }
+  | {
+      id: string;
+      kind: "issueBreakdown";
+      title?: string;
+      items: IssueBreakdownItem[];
+    }
+  | {
+      id: string;
+      kind: "trendChart";
+      title?: string;
+      points: TrendSeriesPoint[];
+      actualLabel?: string;
+      planLabel?: string;
+    }
+  | {
+      id: string;
+      kind: "weeklyNotes";
+      notes: WeeklyNote[];
+    }
+  | {
+      id: string;
+      /** Plain action cards (no Recommended/Alternative badges) */
+      kind: "actionRecommendations";
+      title?: string;
+      items: ActionRecommendation[];
     };
 
 export interface AnswerPayload {
   scopeLine: string;
   headline: { value: string; delta?: string; direction?: "up" | "down" };
   why: string[];
+  /**
+   * Dedicated Gap to Plan analysis report.
+   * When set, AgentMessage renders GapToPlanReport (fixed structure)
+   * instead of generic AnswerSections. `why` becomes the Key finding.
+   */
+  gapToPlanReport?: GapToPlanReportData;
+  /**
+   * @deprecated Prefer gapToPlanReport.title — kept for transitional fixtures
+   */
+  reportTitle?: string;
+  /** @deprecated Prefer gapToPlanReport.subtitle */
+  reportSubtitle?: string;
   visual?: VisualBlock;
   /** Legacy single table — prefer sections[].kind === "table" for new fixtures */
   table?: { columns: string[]; rows: (string | number)[][] };
