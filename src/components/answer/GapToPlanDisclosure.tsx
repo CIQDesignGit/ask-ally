@@ -54,7 +54,7 @@ export function GapToPlanDisclosure({
         >
           {title}
         </span>
-        {summary ? (
+        {summary && !open ? (
           <span className="shrink-0 text-xs tabular-nums text-fg-tertiary">
             {summary}
           </span>

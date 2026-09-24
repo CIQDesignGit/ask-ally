@@ -12,7 +12,7 @@ export function SuggestedQuestions() {
   const isRunning = useAllyStore((s) => s.isRunning);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4">
+    <div className="mx-auto flex w-full max-w-[820px] flex-col items-center px-4">
       {/* Real H1 — EmptyState only renders a div, so we skip it for the hero */}
       <h1 className="type-heading text-center text-fg-primary">
         {agentConfig.welcomeTitle}

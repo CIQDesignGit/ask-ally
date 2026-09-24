@@ -39,8 +39,8 @@ export function ChatCanvas() {
         <ChatContainerContent
           className={
             isEmpty
-              ? "mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center px-4 py-6"
-              : "mx-auto w-full max-w-3xl space-y-4 px-4 py-6"
+              ? "mx-auto flex min-h-full w-full max-w-[820px] flex-col justify-center px-4 py-6"
+              : "mx-auto w-full max-w-[820px] space-y-4 px-4 py-6"
           }
         >
           {isEmpty ? (

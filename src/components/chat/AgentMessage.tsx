@@ -162,7 +162,7 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
             />
           ) : null}
 
-          {/* Plain agent response — fills the chat column (max-w-3xl Content) */}
+          {/* Plain agent response — fills the chat column (820px Content) */}
           <div className="relative w-full space-y-5">
             {turn.thinking?.steps.length ? (
               <AgentThinking

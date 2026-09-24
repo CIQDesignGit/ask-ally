@@ -1,6 +1,176 @@
 import { cn } from "@ciq-dev/ciq-design-system";
 
-import type { GapTone } from "@/types";
+import type { GapPeriodRow, GapTone } from "@/types";
+
+/**
+ * Attainment against a plan track.
+ * Fill is the actual; the unfilled sliver is the shortfall to plan.
+ * The lollipop sits at the end of the fill. Over-plan weeks go green.
+ */
+export function AttainmentBar({
+  label,
+  caption,
+  actual,
+  plan,
+  gap,
+  attainment,
+  actualValue,
+  planValue,
+  pending,
+  featured = false,
+}: GapPeriodRow & { featured?: boolean }) {
+  const pct =
+    !pending && actualValue != null && planValue != null && planValue > 0
+      ? (actualValue / planValue) * 100
+      : parseAttainment(attainment);
+  const over = pct != null && pct >= 100;
+  const trackScale = over && pct ? pct : 100;
+  const fillPct = pct == null ? 0 : Math.min(100, (pct / trackScale) * 100);
+  const markerPct = fillPct;
+  const gapTone =
+    pending || gap === "—"
+      ? "neutral"
+      : gap.trim().startsWith("−") || gap.trim().startsWith("-")
+        ? "negative"
+        : gap.trim().startsWith("+")
+          ? "positive"
+          : "neutral";
+
+  return (
+    <div
+      className={cn("space-y-2.5", featured && "space-y-3")}
+      role="img"
+      aria-label={
+        pending
+          ? `${label} — week in progress`
+          : `${label}: ${actual} actual of ${plan} plan — gap ${gap}${attainment ? ` (${attainment})` : ""}`
+      }
+    >
+      <div
+        className={cn(
+          "truncate text-fg-tertiary",
+          featured ? "text-[12px]" : "text-[11px]",
+        )}
+      >
+        {label}
+        {caption ? <span> ({caption})</span> : null}
+      </div>
+
+      {pending ? (
+        <div className="text-[15px] font-semibold tabular-nums text-fg-tertiary">
+          {gap}
+        </div>
+      ) : (
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-fg-tertiary">
+              Actual
+            </div>
+            <div
+              className={cn(
+                "font-semibold tabular-nums tracking-tight text-fg-primary",
+                featured ? "text-[22px] leading-none" : "text-[17px] leading-none",
+              )}
+            >
+              {actual}
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-fg-tertiary">
+              Gap
+            </div>
+            <div
+              className={cn(
+                "font-semibold tabular-nums tracking-tight",
+                featured ? "text-[22px] leading-none" : "text-[17px] leading-none",
+                gapTone === "positive" && "text-feedback-success",
+                gapTone === "negative" && "text-feedback-danger",
+                gapTone === "neutral" && "text-fg-tertiary",
+              )}
+            >
+              {gap}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-md",
+            featured ? "h-7" : "h-5",
+            pending &&
+              "border-2 border-dashed border-slate-400 bg-slate-200",
+          )}
+        >
+          {pending ? null : (
+            <>
+              <div className="absolute inset-0 bg-slate-100" />
+              {over ? (
+                <div
+                  className="absolute inset-y-0 left-0 bg-emerald-500"
+                  style={{ width: `${fillPct}%` }}
+                />
+              ) : (
+                <>
+                  <div
+                    className="absolute inset-y-0 left-0 bg-blue-500"
+                    style={{ width: `${fillPct}%` }}
+                  />
+                  <div
+                    className="absolute inset-y-0 bg-rose-200"
+                    style={{
+                      left: `${fillPct}%`,
+                      width: `${Math.max(0, 100 - fillPct)}%`,
+                    }}
+                  />
+                </>
+              )}
+              {attainment ? (
+                <span
+                  className={cn(
+                    "absolute inset-y-0 left-2 flex items-center font-semibold tabular-nums text-white",
+                    featured ? "text-[11px]" : "text-[10px]",
+                  )}
+                >
+                  {attainment}
+                </span>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        {!pending ? (
+          <div
+            className="pointer-events-none absolute -top-1 -bottom-0.5 flex w-2.5 -translate-x-1/2 flex-col items-center"
+            style={{ left: `${markerPct}%` }}
+            aria-hidden
+          >
+            <span className="size-1.5 shrink-0 rounded-full bg-slate-900 ring-2 ring-surface" />
+            <span className="w-px flex-1 bg-slate-900" />
+          </div>
+        ) : null}
+      </div>
+
+      {pending ? (
+        <div className="text-[12px] text-fg-tertiary">Week in progress</div>
+      ) : (
+        <div className="text-right text-[12px] tabular-nums text-fg-tertiary">
+          {plan}
+          <span className="ml-1 text-[10px] font-medium uppercase tracking-wide">
+            plan
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function parseAttainment(value?: string): number | null {
+  if (!value) return null;
+  const n = Number.parseFloat(value.replace("%", ""));
+  return Number.isFinite(n) ? n : null;
+}
 
 /**
  * One composition bar: Actual + Gap = Plan.
@@ -68,14 +238,15 @@ export function PlanCompositionBar({
         />
       </div>
 
-      <div className="flex">
-        <div style={{ width: `${actualVisual}%` }} />
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="text-[13px] font-semibold tabular-nums text-fg-primary">
+          {clamped.toFixed(1)}% attainment
+        </div>
         <div
           className={cn(
-            "min-w-0 text-center text-[13px] font-semibold tabular-nums",
+            "text-[13px] font-semibold tabular-nums",
             short ? "text-feedback-danger" : "text-feedback-success",
           )}
-          style={{ width: `${gapVisual}%` }}
         >
           {gapValue}
           <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-fg-tertiary">

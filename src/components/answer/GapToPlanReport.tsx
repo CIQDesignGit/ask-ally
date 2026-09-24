@@ -1,12 +1,13 @@
+import { cn } from "@ciq-dev/ciq-design-system";
 import { Sparkles } from "lucide-react";
 
 import type { GapToPlanReportData, GapToPlanVerdict } from "@/types";
 
 import { EmphasisText } from "./EmphasisText";
-import { PlanCompositionBar } from "./GapToPlanBars";
 import { GapToPlanDisclosure } from "./GapToPlanDisclosure";
 import {
   DriverPanel,
+  driverComparePeriods,
   IssueList,
   PlanVsActualPanel,
   RecommendationList,
@@ -24,31 +25,64 @@ interface GapToPlanReportProps {
   showAnalysis?: boolean;
 }
 
-/**
- * Verdict — one composition bar with Actual, Gap, and Plan plotted on it.
- * Actual + Gap = Plan; the shortfall is the coloured segment, not a second rail.
- */
-function Verdict({ verdict }: { verdict: GapToPlanVerdict }) {
+const verdictValueClass =
+  "mt-0.5 text-lg font-semibold leading-none tabular-nums tracking-tight";
+
+function VerdictMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "danger" | "success";
+}) {
   return (
-    <div className="space-y-3">
-      <PlanCompositionBar
-        actualValue={verdict.actualValue}
-        planValue={verdict.planValue}
-        gapValue={verdict.gapValue}
-        attainmentPct={verdict.attainmentPct}
-        gapDirection={verdict.gapDirection}
-      />
-      <div className="text-[13px] font-semibold tabular-nums text-fg-primary">
-        {verdict.attainmentPct.toFixed(1)}% attainment
-      </div>
+    <div className="px-4 text-right first:pl-0 last:pr-0">
+      <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-tertiary">
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          verdictValueClass,
+          tone === "danger" && "text-feedback-danger",
+          tone === "success" && "text-feedback-success",
+          !tone && "text-fg-primary",
+        )}
+      >
+        {value}
+      </dd>
     </div>
+  );
+}
+
+/**
+ * Header KPIs — three equal figures. Semantic color only on gap.
+ */
+function HeaderVerdict({ verdict }: { verdict: GapToPlanVerdict }) {
+  const attainment = `${verdict.attainmentPct.toFixed(1)}%`;
+  const missed = verdict.gapDirection === "down";
+
+  return (
+    <dl
+      className="flex shrink-0 items-start divide-x divide-border-default"
+      aria-label={`${verdict.actualValue} actual of ${verdict.planValue} plan — gap ${verdict.gapValue} (${attainment})`}
+    >
+      <VerdictMetric
+        label="Gap"
+        value={verdict.gapValue}
+        tone={missed ? "danger" : "success"}
+      />
+      <VerdictMetric label="Actual" value={verdict.actualValue} />
+      <VerdictMetric label="Attainment" value={attainment} />
+    </dl>
   );
 }
 
 /**
  * Fixed Gap to Plan analysis response template.
  *
- *   Header → Verdict → Key finding → Supporting analysis
+ *   Header (title + verdict KPIs) → Key finding → Supporting analysis
  *     (Plan vs Actual · Drivers · Top Issues · Trend · Recommendations)
  *
  * One card only: inside it, grouping comes from hairlines, indentation and
@@ -70,6 +104,7 @@ export function GapToPlanReport({
   const trendTitle =
     report.trend.title ??
     (report.level === "overall" ? "8-week revenue trend" : "Recent trend");
+  const driverPeriods = driverComparePeriods(report.planVsActual.rows);
 
   const findingBody = streaming ? (
     <p
@@ -97,22 +132,24 @@ export function GapToPlanReport({
   return (
     <article className="overflow-hidden rounded-xl border border-border-default bg-surface">
       <header className="px-6 pt-5">
-        <div className="mb-2 flex items-center gap-1.5 text-brand-600">
-          <Sparkles className="size-3.5 shrink-0" aria-hidden />
-          <span className="text-[10px] font-semibold uppercase tracking-wide">
-            Ally
-          </span>
+        <div className="flex items-start justify-between gap-8">
+          <div className="min-w-0">
+            <div className="mb-2 flex items-center gap-1.5 text-brand-600">
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              <span className="text-[10px] font-semibold uppercase tracking-wide">
+                Ally
+              </span>
+            </div>
+            <h2 className="text-base font-semibold leading-snug tracking-tight text-fg-primary">
+              {report.title}
+            </h2>
+          </div>
+          <HeaderVerdict verdict={report.verdict} />
         </div>
-        <h2 className="text-base font-semibold leading-snug tracking-tight text-fg-primary">
-          {report.title}
-        </h2>
-        <p className="mt-0.5 text-xs text-fg-tertiary">{report.subtitle}</p>
+        <p className="mt-1.5 text-xs text-fg-tertiary">{report.subtitle}</p>
       </header>
 
-      <div className="space-y-5 px-6 py-6">
-        <Verdict verdict={report.verdict} />
-        <div className="space-y-2">{findingBody}</div>
-      </div>
+      <div className="space-y-2 px-6 py-6">{findingBody}</div>
 
       {showAnalysis ? (
         <section
@@ -147,6 +184,8 @@ export function GapToPlanReport({
                 contributions={report.drivers.contributions}
                 metrics={report.drivers.metrics}
                 footer={report.drivers.footer}
+                compareFrom={driverPeriods.from}
+                compareTo={driverPeriods.to}
               />
             </GapToPlanDisclosure>
 
