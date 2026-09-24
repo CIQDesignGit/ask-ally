@@ -12,8 +12,8 @@ interface GapToPlanDisclosureProps {
 }
 
 /**
- * Flat disclosure row. Grouping comes from hairlines and indentation
- * rather than another bordered container, so panels never nest boxes.
+ * Flat disclosure row. Grouping comes from hairlines rather than
+ * another bordered container, so panels never nest boxes.
  */
 export function GapToPlanDisclosure({
   title,
@@ -37,13 +37,6 @@ export function GapToPlanDisclosure({
           dense ? "px-6 py-2" : "px-6 py-3.5",
         )}
       >
-        <ChevronRight
-          className={cn(
-            "size-3.5 shrink-0 transition-transform duration-200",
-            open ? "rotate-90 text-fg-primary" : "text-fg-tertiary",
-          )}
-          aria-hidden
-        />
         <span
           className={cn(
             "min-w-0 flex-1 truncate",
@@ -59,10 +52,17 @@ export function GapToPlanDisclosure({
             {summary}
           </span>
         ) : null}
+        <ChevronRight
+          className={cn(
+            "size-3.5 shrink-0 transition-transform duration-200",
+            open ? "rotate-90 text-fg-primary" : "text-fg-tertiary",
+          )}
+          aria-hidden
+        />
       </button>
 
       {open ? (
-        <div id={bodyId} className={cn("pr-6 pb-5 pl-[42px]", dense && "pb-3")}>
+        <div id={bodyId} className={cn("px-6 pb-5", dense && "pb-3")}>
           {children}
         </div>
       ) : null}

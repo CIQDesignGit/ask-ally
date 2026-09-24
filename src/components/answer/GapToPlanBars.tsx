@@ -42,7 +42,7 @@ export function AttainmentBar({
       role="img"
       aria-label={
         pending
-          ? `${label} — week in progress`
+          ? `${label} — week in progress${plan && plan !== "—" ? `, ${plan} plan` : ""}`
           : `${label}: ${actual} actual of ${plan} plan — gap ${gap}${attainment ? ` (${attainment})` : ""}`
       }
     >
@@ -153,15 +153,24 @@ export function AttainmentBar({
       </div>
 
       {pending ? (
-        <div className="text-[12px] text-fg-tertiary">Week in progress</div>
-      ) : (
-        <div className="text-right text-[12px] tabular-nums text-fg-tertiary">
-          {plan}
-          <span className="ml-1 text-[10px] font-medium uppercase tracking-wide">
-            plan
-          </span>
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-[12px] text-fg-tertiary">Week in progress</div>
+          {plan && plan !== "—" ? <PlanCaption plan={plan} /> : null}
         </div>
+      ) : (
+        <PlanCaption plan={plan} />
       )}
+    </div>
+  );
+}
+
+function PlanCaption({ plan }: { plan: string }) {
+  return (
+    <div className="text-right text-[12px] font-semibold tabular-nums text-fg-primary">
+      {plan}
+      <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide">
+        plan
+      </span>
     </div>
   );
 }

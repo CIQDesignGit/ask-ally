@@ -12,6 +12,7 @@ import type {
 
 import { DriverFlow } from "./DriverFlow";
 import { AttainmentBar } from "./GapToPlanBars";
+import { Appear } from "./gap-motion";
 import { TrendChart } from "./TrendChart";
 
 /** Footnote under a panel — narrative stays, but as a closing note, not the payload. */
@@ -167,70 +168,118 @@ export function DriverPanel({
 
 /* --------------------------------------------------------------------- Issues */
 
-const STATUS_PILL: Record<IssueStatusTone, string> = {
-  danger: "bg-red-50 text-red-700",
-  warning: "bg-amber-50 text-amber-800",
-  success: "bg-emerald-50 text-emerald-700",
-  neutral: "bg-surface-muted text-fg-secondary",
-};
-
 const VALUE_TONE: Record<IssueStatusTone, string> = {
-  danger: "text-feedback-danger",
-  warning: "text-amber-700",
+  danger: "text-red-600",
+  warning: "text-amber-800",
   success: "text-feedback-success",
   neutral: "text-fg-primary",
 };
 
-export function IssueList({ items }: { items: GapIssueItem[] }) {
+const HEADER_TONE: Record<IssueStatusTone, string> = {
+  danger: "bg-red-50",
+  warning: "bg-amber-50",
+  success: "bg-emerald-50",
+  neutral: "bg-surface-muted",
+};
+
+const DOT_TONE: Record<IssueStatusTone, string> = {
+  danger: "bg-red-500",
+  warning: "bg-amber-500",
+  success: "bg-emerald-500",
+  neutral: "bg-slate-400",
+};
+
+const PILL_TONE: Record<IssueStatusTone, string> = {
+  danger: "border-red-200 text-red-700",
+  warning: "border-amber-200 text-amber-800",
+  success: "border-emerald-200 text-emerald-700",
+  neutral: "border-border-default text-fg-secondary",
+};
+
+function IssueCard({ item }: { item: GapIssueItem }) {
+  const tone = item.statusTone ?? "neutral";
+
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {items.map((item) => {
-        const tone = item.statusTone ?? "neutral";
-
-        return (
-          <li
-            key={item.title}
-            className="flex flex-col gap-2 rounded-xl border border-border-default bg-surface px-3.5 py-3.5"
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border-default bg-surface">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 px-5 py-4",
+          HEADER_TONE[tone],
+        )}
+      >
+        {item.value ? (
+          <div
+            className={cn(
+              "text-[20px] font-semibold leading-none tabular-nums tracking-tight",
+              VALUE_TONE[tone],
+            )}
           >
-            <div className="flex items-start justify-between gap-2">
-              {item.value ? (
-                <div
-                  className={cn(
-                    "text-[20px] font-semibold tabular-nums tracking-tight",
-                    VALUE_TONE[tone],
-                  )}
-                >
-                  {item.value}
-                </div>
-              ) : (
-                <span />
-              )}
-              {item.statusLabel ? (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                    STATUS_PILL[tone],
-                  )}
-                >
-                  {item.statusLabel}
-                </span>
-              ) : null}
-            </div>
+            {item.value}
+          </div>
+        ) : (
+          <span />
+        )}
+        {item.statusLabel ? (
+          <span
+            className={cn(
+              "shrink-0 rounded-full border bg-white px-2.5 py-1 text-[11px] font-medium",
+              PILL_TONE[tone],
+            )}
+          >
+            {item.statusLabel}
+          </span>
+        ) : null}
+      </div>
 
-            {item.meta ? (
-              <div className="text-[11px] text-fg-tertiary">{item.meta}</div>
-            ) : null}
+      <div className="flex flex-1 flex-col px-5 py-4">
+        {item.meta ? (
+          <div className="flex items-center gap-1.5 text-[12px] text-fg-secondary">
+            <span
+              className={cn("size-1.5 shrink-0 rounded-full", DOT_TONE[tone])}
+              aria-hidden
+            />
+            {item.meta}
+          </div>
+        ) : null}
 
-            <h4 className="text-[13px] font-semibold leading-snug text-fg-primary">
-              {item.title}
-            </h4>
-            <p className="text-[12.5px] leading-relaxed text-fg-secondary">
-              {item.body}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
+        <h4
+          className={cn(
+            "text-[15px] font-semibold leading-snug text-fg-primary",
+            item.meta ? "mt-1.5" : "mt-0",
+          )}
+        >
+          {item.title}
+        </h4>
+        <p className="mt-1 text-[13px] leading-relaxed text-fg-secondary">
+          {item.body}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+export function IssueList({
+  items,
+  appearDelay = 0,
+}: {
+  items: GapIssueItem[];
+  appearDelay?: number;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-3",
+        items.length > 1 && "sm:grid-cols-2",
+      )}
+    >
+      {items.map((entry, i) => (
+        <Appear key={entry.title} delay={appearDelay + i * 0.1} y={10} duration={0.45}>
+          <IssueCard item={entry} />
+        </Appear>
+      ))}
+    </div>
   );
 }
 
@@ -258,12 +307,22 @@ export function TrendPanel({
 
 /* ------------------------------------------------------------- Recommendations */
 
-export function RecommendationList({ items }: { items: ActionRecommendation[] }) {
+export function RecommendationList({
+  items,
+  appearDelay = 0,
+}: {
+  items: ActionRecommendation[];
+  appearDelay?: number;
+}) {
   return (
     <ol className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-      {items.map((item, i) => (
-        <li
-          key={item.title}
+      {items.map((entry, i) => (
+        <Appear
+          as="li"
+          key={entry.title}
+          delay={appearDelay + i * 0.1}
+          y={10}
+          duration={0.45}
           className="flex gap-3 rounded-[10px] bg-surface-muted px-[18px] py-3.5"
         >
           <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-semibold tabular-nums text-fg-secondary">
@@ -271,13 +330,13 @@ export function RecommendationList({ items }: { items: ActionRecommendation[] })
           </span>
           <div className="min-w-0">
             <h4 className="text-[13.5px] font-semibold text-fg-primary">
-              {item.title}
+              {entry.title}
             </h4>
             <p className="mt-0.5 text-[13px] leading-relaxed text-fg-secondary">
-              {item.body}
+              {entry.body}
             </p>
           </div>
-        </li>
+        </Appear>
       ))}
     </ol>
   );

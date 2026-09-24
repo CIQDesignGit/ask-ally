@@ -1,7 +1,4 @@
-import {
-  ChatContainerContent,
-  ChatContainerRoot,
-} from "@ciq-dev/ciq-design-system";
+import { useLayoutEffect, useRef } from "react";
 
 import { formatScopeChips } from "@/lib/utils";
 import { useAllyStore } from "@/store/ally-store";
@@ -21,6 +18,25 @@ export function ChatCanvas() {
   const scope = useAllyStore((s) => s.scope);
   const chips = formatScopeChips(scope);
   const isEmpty = !thread || thread.turns.length === 0;
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const prevUserTurnId = useRef<string | undefined>(undefined);
+  const lastUserTurnId = thread?.turns.findLast((t) => t.role === "user")?.id;
+
+  // Pin a newly asked question to the top of the pane once. Do not follow
+  // the answer as it grows — the user reads from the start of the turn.
+  useLayoutEffect(() => {
+    const prev = prevUserTurnId.current;
+    prevUserTurnId.current = lastUserTurnId;
+    if (!lastUserTurnId || !prev || lastUserTurnId === prev) return;
+
+    const scroller = scrollerRef.current;
+    const el = document.getElementById(`turn-${lastUserTurnId}`);
+    if (!scroller || !el) return;
+
+    const delta =
+      el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollTop += delta;
+  }, [lastUserTurnId]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -35,8 +51,16 @@ export function ChatCanvas() {
         </div>
       )}
 
-      <ChatContainerRoot className="min-h-0 flex-1">
-        <ChatContainerContent
+      <div
+        ref={scrollerRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-atomic="false"
+        aria-label="Chat messages"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+      >
+        <div
           className={
             isEmpty
               ? "mx-auto flex min-h-full w-full max-w-[820px] flex-col justify-center px-4 py-6"
@@ -49,11 +73,9 @@ export function ChatCanvas() {
             thread.turns.map((turn, idx) => {
               if (turn.role === "user") {
                 return (
-                  <UserMessage
-                    key={turn.id}
-                    turn={turn}
-                    scopeChips={chips}
-                  />
+                  <div key={turn.id} id={`turn-${turn.id}`}>
+                    <UserMessage turn={turn} scopeChips={chips} />
+                  </div>
                 );
               }
               return (
@@ -66,8 +88,8 @@ export function ChatCanvas() {
               );
             })
           )}
-        </ChatContainerContent>
-      </ChatContainerRoot>
+        </div>
+      </div>
 
       <Messenger />
     </div>

@@ -1,6 +1,5 @@
 import { cn } from "@ciq-dev/ciq-design-system";
 import { Sparkles } from "lucide-react";
-
 import type { GapToPlanReportData, GapToPlanVerdict } from "@/types";
 
 import { EmphasisText } from "./EmphasisText";
@@ -13,6 +12,7 @@ import {
   RecommendationList,
   TrendPanel,
 } from "./GapToPlanPanels";
+import { Appear, sectionDelay } from "./gap-motion";
 
 interface GapToPlanReportProps {
   report: GapToPlanReportData;
@@ -86,7 +86,7 @@ function HeaderVerdict({ verdict }: { verdict: GapToPlanVerdict }) {
  *     (Plan vs Actual · Drivers · Top Issues · Trend · Recommendations)
  *
  * One card only: inside it, grouping comes from hairlines, indentation and
- * white space, and detail is revealed on demand rather than dumped up front.
+ * white space. Sections open by default and stagger in after the key finding.
  *
  * Trigger: “Run Gap to plan analysis for …”
  */
@@ -105,6 +105,89 @@ export function GapToPlanReport({
     report.trend.title ??
     (report.level === "overall" ? "8-week revenue trend" : "Recent trend");
   const driverPeriods = driverComparePeriods(report.planVsActual.rows);
+
+  const sections = [
+    {
+      key: "plan",
+      node: (
+        <GapToPlanDisclosure
+          title={report.planVsActual.title ?? "Plan vs actual"}
+          summary={report.planVsActual.summary}
+          defaultOpen
+        >
+          <PlanVsActualPanel
+            rows={report.planVsActual.rows}
+            footer={report.planVsActual.footer}
+          />
+        </GapToPlanDisclosure>
+      ),
+    },
+    {
+      key: "drivers",
+      node: (
+        <GapToPlanDisclosure
+          title={
+            report.drivers.title ?? "Quick Ecommerce Equation Breakdown"
+          }
+          defaultOpen
+        >
+          <DriverPanel
+            contributions={report.drivers.contributions}
+            metrics={report.drivers.metrics}
+            footer={report.drivers.footer}
+            compareFrom={driverPeriods.from}
+            compareTo={driverPeriods.to}
+          />
+        </GapToPlanDisclosure>
+      ),
+    },
+    {
+      key: "issues",
+      node: (
+        <GapToPlanDisclosure
+          title={issuesTitle}
+          summary={report.issues.summary}
+          defaultOpen
+        >
+          <IssueList
+            items={report.issues.items}
+            appearDelay={sectionDelay(3) + 0.12}
+          />
+        </GapToPlanDisclosure>
+      ),
+    },
+    {
+      key: "trend",
+      node: (
+        <GapToPlanDisclosure
+          title={trendTitle}
+          summary={report.trend.summary}
+          defaultOpen
+        >
+          <TrendPanel
+            points={report.trend.points}
+            actualLabel={report.trend.actualLabel}
+            planLabel={report.trend.planLabel}
+          />
+        </GapToPlanDisclosure>
+      ),
+    },
+    {
+      key: "recs",
+      node: (
+        <GapToPlanDisclosure
+          title={report.recommendations.title ?? "Recommended next steps"}
+          summary={report.recommendations.summary}
+          defaultOpen
+        >
+          <RecommendationList
+            items={report.recommendations.items}
+            appearDelay={sectionDelay(5) + 0.12}
+          />
+        </GapToPlanDisclosure>
+      ),
+    },
+  ];
 
   const findingBody = streaming ? (
     <p
@@ -156,64 +239,24 @@ export function GapToPlanReport({
           aria-labelledby="gap-to-plan-supporting"
           className="border-t border-border-default"
         >
-          <h3
+          <Appear
+            as="h3"
             id="gap-to-plan-supporting"
             className="px-6 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wide text-fg-tertiary"
+            delay={sectionDelay(0)}
           >
             Supporting analysis
-          </h3>
+          </Appear>
 
-          <div className="divide-y divide-border-default">
-            <GapToPlanDisclosure
-              title={report.planVsActual.title ?? "Plan vs actual"}
-              summary={report.planVsActual.summary}
-              defaultOpen
+          {sections.map((block, i) => (
+            <Appear
+              key={block.key}
+              className="border-t border-border-default"
+              delay={sectionDelay(i + 1)}
             >
-              <PlanVsActualPanel
-                rows={report.planVsActual.rows}
-                footer={report.planVsActual.footer}
-              />
-            </GapToPlanDisclosure>
-
-            <GapToPlanDisclosure
-              title={
-                report.drivers.title ?? "Quick Ecommerce Equation Breakdown"
-              }
-            >
-              <DriverPanel
-                contributions={report.drivers.contributions}
-                metrics={report.drivers.metrics}
-                footer={report.drivers.footer}
-                compareFrom={driverPeriods.from}
-                compareTo={driverPeriods.to}
-              />
-            </GapToPlanDisclosure>
-
-            <GapToPlanDisclosure
-              title={issuesTitle}
-              summary={report.issues.summary}
-            >
-              <IssueList items={report.issues.items} />
-            </GapToPlanDisclosure>
-
-            <GapToPlanDisclosure
-              title={trendTitle}
-              summary={report.trend.summary}
-            >
-              <TrendPanel
-                points={report.trend.points}
-                actualLabel={report.trend.actualLabel}
-                planLabel={report.trend.planLabel}
-              />
-            </GapToPlanDisclosure>
-
-            <GapToPlanDisclosure
-              title={report.recommendations.title ?? "Recommended next steps"}
-              summary={report.recommendations.summary}
-            >
-              <RecommendationList items={report.recommendations.items} />
-            </GapToPlanDisclosure>
-          </div>
+              {block.node}
+            </Appear>
+          ))}
         </section>
       ) : null}
     </article>

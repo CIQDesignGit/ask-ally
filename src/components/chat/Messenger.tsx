@@ -96,6 +96,7 @@ export function Messenger() {
           </PromptInput>
           <ScopeChips
             className="mt-2"
+            hidePeriodAndComparison
             leading={
               <>
                 <input

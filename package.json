@@ -13,6 +13,7 @@
     "@ciq-dev/ciq-design-system": "^0.1.1-develop.19",
     "@xyflow/react": "^12.11.6",
     "lucide-react": "^1.38.0",
+    "motion": "^13.4.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",

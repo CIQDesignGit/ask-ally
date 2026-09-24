@@ -2,6 +2,7 @@ import { cn } from "@ciq-dev/ciq-design-system";
 import {
   BaseEdge,
   Handle,
+  MarkerType,
   Position,
   ReactFlow,
   useUpdateNodeInternals,
@@ -234,10 +235,11 @@ function TreeEdge({
   targetX,
   targetY,
   style,
+  markerEnd,
 }: EdgeProps) {
   const midY = sourceY + (targetY - sourceY) / 2;
   const path = `M ${sourceX} ${sourceY} L ${sourceX} ${midY} L ${targetX} ${midY} L ${targetX} ${targetY}`;
-  return <BaseEdge id={id} path={path} style={style} />;
+  return <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} />;
 }
 
 const edgeTypes = {
@@ -252,9 +254,18 @@ function RegisterHandles({ ids }: { ids: string }) {
   return null;
 }
 
+const EDGE_COLOR = "var(--color-slate-400)";
+
 const EDGE_STYLE = {
-  stroke: "var(--color-slate-400)",
+  stroke: EDGE_COLOR,
   strokeWidth: 1,
+} as const;
+
+const EDGE_MARKER = {
+  type: MarkerType.ArrowClosed,
+  color: EDGE_COLOR,
+  width: 18,
+  height: 18,
 } as const;
 
 const COMPARE_H = 72;
@@ -350,6 +361,7 @@ export function DriverFlow({
           targetHandle: "target",
           type: "tree",
           style: EDGE_STYLE,
+          markerEnd: EDGE_MARKER,
         });
       }
     });

@@ -83,6 +83,7 @@ export function ScopeChips({
   trailing,
   scope: scopeProp,
   onScopeChange,
+  hidePeriodAndComparison = false,
 }: {
   className?: string;
   leading?: ReactNode;
@@ -91,6 +92,8 @@ export function ScopeChips({
   /** Controlled scope — when set with onScopeChange, does not touch global chat scope */
   scope?: ScopeContext;
   onScopeChange?: (patch: Partial<ScopeContext>) => void;
+  /** Hide period + comparison chips (ask box, temporarily). */
+  hidePeriodAndComparison?: boolean;
 }) {
   const storeScope = useAllyStore((s) => s.scope);
   const setStoreScope = useAllyStore((s) => s.setScope);
@@ -162,44 +165,48 @@ export function ScopeChips({
         </SelectContent>
       </Select>
 
-      <Select
-        value={scope.period.label}
-        onValueChange={(v) => {
-          const period: ScopeContext["period"] =
-            v === currentPeriodScope.period.label
-              ? currentPeriodScope.period
-              : defaultScope.period;
-          setScope({ period });
-        }}
-      >
-        <SelectTrigger className={chipTriggerClass} size="sm">
-          <SelectValue placeholder="Period" />
-        </SelectTrigger>
-        <SelectContent {...chipSelectContentProps}>
-          <SelectItem value={defaultScope.period.label}>
-            {defaultScope.period.label}
-          </SelectItem>
-          <SelectItem value={currentPeriodScope.period.label}>
-            {currentPeriodScope.period.label}
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      {hidePeriodAndComparison ? null : (
+        <>
+          <Select
+            value={scope.period.label}
+            onValueChange={(v) => {
+              const period: ScopeContext["period"] =
+                v === currentPeriodScope.period.label
+                  ? currentPeriodScope.period
+                  : defaultScope.period;
+              setScope({ period });
+            }}
+          >
+            <SelectTrigger className={chipTriggerClass} size="sm">
+              <SelectValue placeholder="Period" />
+            </SelectTrigger>
+            <SelectContent {...chipSelectContentProps}>
+              <SelectItem value={defaultScope.period.label}>
+                {defaultScope.period.label}
+              </SelectItem>
+              <SelectItem value={currentPeriodScope.period.label}>
+                {currentPeriodScope.period.label}
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
-      <Select
-        value={scope.comparison}
-        onValueChange={(v) =>
-          setScope({ comparison: v as ScopeContext["comparison"] })
-        }
-      >
-        <SelectTrigger className={chipTriggerClass} size="sm">
-          <SelectValue placeholder="Comparison" />
-        </SelectTrigger>
-        <SelectContent {...chipSelectContentProps}>
-          <SelectItem value="vs_plan">vs plan</SelectItem>
-          <SelectItem value="vs_prior_period">vs prior period</SelectItem>
-          <SelectItem value="vs_prior_year">vs prior year</SelectItem>
-        </SelectContent>
-      </Select>
+          <Select
+            value={scope.comparison}
+            onValueChange={(v) =>
+              setScope({ comparison: v as ScopeContext["comparison"] })
+            }
+          >
+            <SelectTrigger className={chipTriggerClass} size="sm">
+              <SelectValue placeholder="Comparison" />
+            </SelectTrigger>
+            <SelectContent {...chipSelectContentProps}>
+              <SelectItem value="vs_plan">vs plan</SelectItem>
+              <SelectItem value="vs_prior_period">vs prior period</SelectItem>
+              <SelectItem value="vs_prior_year">vs prior year</SelectItem>
+            </SelectContent>
+          </Select>
+        </>
+      )}
       {trailing ? <div className="ml-auto shrink-0">{trailing}</div> : null}
     </div>
   );
