@@ -608,7 +608,7 @@ export const useAllyStore = create<AllyState>()(
     }),
     {
       name: "ask-ally-store",
-      version: 7,
+      version: 8,
       migrate: (persisted, version) => {
         let state = persisted as {
           automations?: unknown;
@@ -631,15 +631,21 @@ export const useAllyStore = create<AllyState>()(
         if (version < 7 && Array.isArray(state.threads)) {
           state = { ...state, threads: state.threads.map(stripLegacyGapReport) };
         }
+        // v8: always open on new-chat empty state (history stays in the rail).
+        if (version < 8) {
+          state = {
+            ...state,
+            activeThreadId: null,
+            breadcrumb: ["Portfolio"],
+            scope: { ...defaultScope },
+          };
+        }
         return state as typeof persisted;
       },
       partialize: (s) => ({
         threads: s.threads,
         preferences: s.preferences,
         automations: s.automations,
-        scope: s.scope,
-        activeThreadId: s.activeThreadId,
-        breadcrumb: s.breadcrumb,
       }),
     }
   )
