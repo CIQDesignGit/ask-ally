@@ -1,26 +1,33 @@
 import { useCallback, useRef, useState } from "react";
-import {
-  Button,
-  PromptInput,
-  PromptInputTextarea,
-} from "@ciq-dev/ciq-design-system";
-import { ArrowUp, Paperclip, Square, X } from "lucide-react";
+import { Button } from "@ciq-dev/ciq-design-system";
+import { ArrowUp, Square, X } from "lucide-react";
 
-import { ScopeChips } from "@/components/chat/ScopeChips";
+import { FollowupChips } from "@/components/answer/FollowupChips";
 import { useAllyStore } from "@/store/ally-store";
 import type { AttachmentMeta } from "@/types";
 
-/**
- * Scoped ask box — local composite until CIQ PromptInput `scoped` variant ships.
- * See docs/CIQ_DS_CHANGELOG.md
- */
+const DISCLAIMER =
+  "Agent is currently trained to answer SKU level RCA only. AI can make mistakes. Please double-check responses.";
+
+/** One-line ask box with follow-ups above and disclaimer below. */
 export function Messenger() {
   const [value, setValue] = useState("");
   const [files, setFiles] = useState<AttachmentMeta[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const submitMessage = useAllyStore((s) => s.submitMessage);
   const stopGeneration = useAllyStore((s) => s.stopGeneration);
   const isRunning = useAllyStore((s) => s.isRunning);
+  const thread = useAllyStore((s) => s.getActiveThread());
+
+  const lastAllyWithFollowups = !isRunning
+    ? thread?.turns.findLast(
+        (t) =>
+          t.role === "ally" &&
+          Boolean(t.answer?.followups?.length) &&
+          (!t.thinking || t.thinking.done),
+      )
+    : undefined;
+  const followups = lastAllyWithFollowups?.answer?.followups ?? [];
 
   const canSend = value.trim().length > 0 || files.length > 0;
 
@@ -48,18 +55,28 @@ export function Messenger() {
       list.map((f) => ({
         name: f.name,
         sizeKb: Math.max(1, Math.round(f.size / 1024)),
-      }))
+      })),
     );
   };
 
   return (
     <div
-      className="bg-surface px-3 pt-3 pb-10"
+      className="bg-surface px-3 pt-2 pb-2"
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="mx-auto w-full max-w-[820px] space-y-2">
-        {files.length > 0 && (
+      <div className="mx-auto w-full max-w-[820px] space-y-2.5">
+        {followups.length > 0 ? (
+          <FollowupChips
+            followups={followups}
+            disabled={isRunning}
+            onSelect={(label, nextTurnId) =>
+              void submitMessage(label, { explicitFixtureId: nextTurnId })
+            }
+          />
+        ) : null}
+
+        {files.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {files.map((f) => (
               <span
@@ -80,70 +97,43 @@ export function Messenger() {
               </span>
             ))}
           </div>
-        )}
+        ) : null}
 
-        {/* Local "scoped" shell: chips + compact PromptInput */}
-        <div className="rounded-xl border border-border-default bg-surface p-2.5 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-emerald-200)_40%,transparent),0_4px_24px_-4px_color-mix(in_srgb,var(--color-brand-400)_28%,transparent)]">
-          <PromptInput
-            variant="compact"
+        <form
+          className="flex h-12 items-center gap-2 rounded-full border border-border-default bg-surface py-1.5 pr-1.5 pl-4 shadow-sm"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }}
+        >
+          <input
+            ref={inputRef}
+            type="text"
             value={value}
-            onValueChange={setValue}
-            onSubmit={onSubmit}
-            isLoading={isRunning}
-            className="border-0 shadow-none"
-          >
-            <PromptInputTextarea placeholder="Ask Ally about gap to plan, Buy Box, promos…" />
-          </PromptInput>
-          <ScopeChips
-            className="mt-2"
-            hidePeriodAndComparison
-            leading={
-              <>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  className="hidden"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={(e) => {
-                    const list = Array.from(e.target.files ?? []);
-                    setFiles(
-                      list.map((f) => ({
-                        name: f.name,
-                        sizeKb: Math.max(1, Math.round(f.size / 1024)),
-                      }))
-                    );
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0 rounded-lg shadow-none"
-                  aria-label="Attach file"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <Paperclip className="size-4" />
-                </Button>
-              </>
-            }
-            trailing={
-              <Button
-                type="button"
-                size="icon"
-                aria-label={isRunning ? "Stop generating" : "Send"}
-                disabled={!isRunning && !canSend}
-                className="size-8 shrink-0 rounded-full bg-action-primary text-action-primary-fg shadow-none hover:bg-action-primary-hover disabled:opacity-40 [&_svg]:size-4"
-                onClick={onSubmit}
-              >
-                {isRunning ? (
-                  <Square className="size-3.5 fill-current" />
-                ) : (
-                  <ArrowUp />
-                )}
-              </Button>
-            }
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Ask Ally about gap to plan, Buy Box, promos…"
+            disabled={isRunning}
+            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-fg-primary outline-none placeholder:text-fg-tertiary disabled:opacity-60"
+            aria-label="Message Ally"
           />
-        </div>
+          <Button
+            type="submit"
+            size="icon"
+            aria-label={isRunning ? "Stop generating" : "Send"}
+            disabled={!isRunning && !canSend}
+            className="size-9 shrink-0 rounded-full bg-action-primary text-action-primary-fg shadow-none hover:bg-action-primary-hover disabled:opacity-40 [&_svg]:size-4"
+          >
+            {isRunning ? (
+              <Square className="size-3.5 fill-current" />
+            ) : (
+              <ArrowUp />
+            )}
+          </Button>
+        </form>
+
+        <p className="text-center text-[11px] leading-relaxed text-fg-tertiary">
+          {DISCLAIMER}
+        </p>
       </div>
     </div>
   );

@@ -39,7 +39,15 @@ export interface Turn {
   answer?: AnswerPayload;
   /** Present while Ally is still processing this turn */
   thinking?: ThinkingState;
-  feedback?: { sentiment: "up" | "down"; reason?: string; note?: string };
+  feedback?: {
+    sentiment: "up" | "down";
+    /** Tag chip values from FeedbackForm (e.g. accurate, clear) */
+    tags?: string[];
+    reason?: string;
+    note?: string;
+    /** True after Share Feedback or Skip */
+    submitted?: boolean;
+  };
   /** Disambiguation-only turn (no full answer yet) */
   disambiguation?: {
     question: string;
@@ -211,36 +219,27 @@ export interface ActionRecommendation {
 }
 
 /**
- * Fixed Gap to Plan analysis report template
- * (structure mirrors alerts-V2 FullRcaReport).
- * Used when the user asks “Run Gap to plan analysis for …”.
- *
- * Every figure carries a numeric sibling so the UI can encode magnitude
- * as bars instead of printing another wall of numbers.
+ * Fixed Gap to Plan analysis report template.
+ * Layout matches the design reference:
+ *   ANALYSIS header → narrative → 8-week trend → plan vs drivers
+ *   → brand gap cards → numbered recommendations.
  */
 export type GapToPlanScopeLevel = "overall" | "brand" | "category" | "sku";
 
 export type GapTone = "positive" | "negative" | "neutral";
 
-/** Headline verdict — the numbers that earn the largest type on screen */
+/** Headline verdict — kept for persistence migration */
 export interface GapToPlanVerdict {
   gapValue: string;
   gapDirection: "up" | "down";
   attainmentPct: number;
   actualValue: string;
   planValue: string;
-  /** Week-over-week movement, e.g. “Narrowed $1.55M from −$2.7M” */
   changeNote?: string;
   changeTone?: GapTone;
 }
 
-/** Two offsetting populations rendered as one diverging bar */
-export interface GapSplit {
-  label: string;
-  left: { label: string; value: string; magnitude: number };
-  right: { label: string; value: string; magnitude: number };
-}
-
+/** One week card in “Plan vs actual → what drove it” */
 export interface GapPeriodRow {
   label: string;
   caption?: string;
@@ -248,47 +247,39 @@ export interface GapPeriodRow {
   plan: string;
   gap: string;
   attainment?: string;
-  /** Drives the bar; omit with `pending` for in-flight weeks */
   actualValue?: number;
   planValue?: number;
   pending?: boolean;
+  /** Purple ring — focal week that fans into drivers */
+  featured?: boolean;
 }
 
-export interface GapDriverContribution {
-  label: string;
-  value: string;
-  /** Signed dollar impact — drives the diverging bar */
-  impact: number;
-  note?: string;
-}
-
-export interface GapDriverMetric {
-  label: string;
-  prior: string;
-  current: string;
-  delta: string;
-  tone?: GapTone;
-}
-
-export interface GapIssueItem {
+export interface GapDriverInsight {
   title: string;
   body: string;
-  value?: string;
-  /** Absolute dollars — drives the inline magnitude bar */
-  magnitude?: number;
-  /** Streak / context line, e.g. “8 weeks behind” */
-  meta?: string;
-  statusLabel?: string;
-  statusTone?: IssueStatusTone;
+  tone: "positive" | "negative";
 }
 
-/** One week in the trend log — collapsed to a single row until opened */
-export interface GapWeekNote {
-  date: string;
-  actual: string;
-  plan: string;
-  gap: string;
-  tone?: GapTone;
+export interface GapDriverCard {
+  id: string;
+  label: string;
+  /** e.g. "+0.8%" */
+  pctChange: string;
+  direction: "up" | "down";
+  lastWeek: string;
+  prevWeek: string;
+  /** e.g. "+$231K" */
+  revenueImpact: string;
+  impactTone: "positive" | "negative";
+  insights: GapDriverInsight[];
+  net: string;
+}
+
+export interface GapBrandCard {
+  value: string;
+  tone: GapTone;
+  meta: string;
+  title: string;
   body: string;
 }
 
@@ -297,40 +288,69 @@ export interface GapToPlanReportData {
   subtitle: string;
   level?: GapToPlanScopeLevel;
   verdict: GapToPlanVerdict;
-  /** Offsetting SKU populations behind the net gap */
-  split?: GapSplit;
-  planVsActual: {
-    title?: string;
-    /** Shown on the collapsed row so it stays useful closed */
-    summary?: string;
-    rows: GapPeriodRow[];
-    footer?: string;
-  };
-  drivers: {
-    title?: string;
-    summary?: string;
-    contributions: GapDriverContribution[];
-    metrics: GapDriverMetric[];
-    footer?: string;
-  };
-  issues: {
-    title?: string;
-    summary?: string;
-    items: GapIssueItem[];
-  };
+  /** 8-week revenue trend (shown first after narrative) */
   trend: {
     title?: string;
-    summary?: string;
+    subtitle?: string;
     points: TrendSeriesPoint[];
-    actualLabel?: string;
-    planLabel?: string;
-    notes?: GapWeekNote[];
+    /** Index of first week in the “Compared below” highlight */
+    comparedFromIndex?: number;
+    endLabels?: { plan: string; actual: string };
+  };
+  /** Week cards + Traffic / Conversion / Price driver columns */
+  planVsDrivers: {
+    title?: string;
+    subtitle?: string;
+    narrative: string;
+    weeks: GapPeriodRow[];
+    drivers: GapDriverCard[];
+  };
+  brands: {
+    title?: string;
+    summary: string;
+    items: GapBrandCard[];
   };
   recommendations: {
     title?: string;
-    summary?: string;
     items: ActionRecommendation[];
   };
+}
+
+/** @deprecated Legacy helpers — GapToPlanPanels / DriverFlow */
+export interface GapSplit {
+  label: string;
+  left: { label: string; value: string; magnitude: number };
+  right: { label: string; value: string; magnitude: number };
+}
+export interface GapDriverContribution {
+  label: string;
+  value: string;
+  impact: number;
+  note?: string;
+}
+export interface GapDriverMetric {
+  label: string;
+  prior: string;
+  current: string;
+  delta: string;
+  tone?: GapTone;
+}
+export interface GapIssueItem {
+  title: string;
+  body: string;
+  value?: string;
+  magnitude?: number;
+  meta?: string;
+  statusLabel?: string;
+  statusTone?: IssueStatusTone;
+}
+export interface GapWeekNote {
+  date: string;
+  actual: string;
+  plan: string;
+  gap: string;
+  tone?: GapTone;
+  body: string;
 }
 
 /** Composable rich sections inside an Ally answer */

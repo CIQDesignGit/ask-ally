@@ -132,7 +132,10 @@ function applyFixtureScope(
   };
 }
 
-/** A gap-to-plan report is only renderable if it carries the verdict block. */
+/**
+ * A gap-to-plan report is only renderable if it carries the screenshot
+ * layout shape (trend + planVsDrivers + brands). Older shapes are stripped.
+ */
 function stripLegacyGapReport(thread: unknown): unknown {
   if (!thread || typeof thread !== "object") return thread;
   const t = thread as { turns?: unknown };
@@ -143,7 +146,13 @@ function stripLegacyGapReport(thread: unknown): unknown {
     turns: t.turns.map((turn) => {
       const answer = (turn as { answer?: Record<string, unknown> })?.answer;
       const report = answer?.gapToPlanReport as Record<string, unknown> | undefined;
-      if (!report || "verdict" in report) return turn;
+      if (!report) return turn;
+      const currentShape =
+        "verdict" in report &&
+        "trend" in report &&
+        "planVsDrivers" in report &&
+        "brands" in report;
+      if (currentShape) return turn;
 
       const { gapToPlanReport: _legacy, ...rest } = answer!;
       return { ...(turn as object), answer: rest };
@@ -599,7 +608,7 @@ export const useAllyStore = create<AllyState>()(
     }),
     {
       name: "ask-ally-store",
-      version: 3,
+      version: 7,
       migrate: (persisted, version) => {
         let state = persisted as {
           automations?: unknown;
@@ -618,10 +627,8 @@ export const useAllyStore = create<AllyState>()(
             ),
           };
         }
-        // v3 reshaped the gap-to-plan report. Drop reports saved in the old
-        // shape so stored turns fall back to their text answer instead of
-        // rendering against fields that no longer exist.
-        if (version < 3 && Array.isArray(state.threads)) {
+        // v7: screenshot Gap to Plan layout — strip allybrain / older shapes.
+        if (version < 7 && Array.isArray(state.threads)) {
           state = { ...state, threads: state.threads.map(stripLegacyGapReport) };
         }
         return state as typeof persisted;

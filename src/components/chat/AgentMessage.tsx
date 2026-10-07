@@ -1,16 +1,14 @@
 import { useState } from "react";
 import {
   Button,
-  Chip,
   Message,
   MessageContent,
   cn,
 } from "@ciq-dev/ciq-design-system";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
 
+import { AnswerFeedback } from "@/components/answer/AnswerFeedback";
 import { AnswerSections } from "@/components/answer/AnswerSections";
 import { AssumptionChip } from "@/components/answer/AssumptionChip";
-import { FollowupChips } from "@/components/answer/FollowupChips";
 import { GapToPlanReport } from "@/components/answer/GapToPlanReport";
 import { HeroStatTile } from "@/components/answer/HeroStatTile";
 import { TradeoffCard } from "@/components/answer/TradeoffCard";
@@ -55,16 +53,15 @@ function AgentPlain({
 
 interface UserMessageProps {
   turn: Turn;
-  scopeChips: string[];
 }
 
-export function UserMessage({ turn, scopeChips }: UserMessageProps) {
+export function UserMessage({ turn }: UserMessageProps) {
   return (
     <Message className="justify-end">
       <div className="flex max-w-[85%] flex-col items-end gap-1">
         <MessageContent
           variant="user"
-          className="max-w-full !rounded-lg !p-2 md:!p-2.5"
+          className="max-w-full !rounded-[12px] !rounded-br-[2px] !bg-brand-100 !px-2.5 !py-1 md:!px-3 md:!py-1.5"
         >
           {turn.input ?? ""}
         </MessageContent>
@@ -73,13 +70,6 @@ export function UserMessage({ turn, scopeChips }: UserMessageProps) {
             📎 {a.name} ({a.sizeKb} KB)
           </div>
         ))}
-        {scopeChips.length > 0 && (
-          <div className="flex flex-wrap justify-end gap-1">
-            {scopeChips.map((c) => (
-              <Chip key={c} message={c} className="border-0 bg-slate-50" />
-            ))}
-          </div>
-        )}
       </div>
     </Message>
   );
@@ -149,8 +139,6 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
   }
 
   if (!answer) return null;
-
-  const feedback = turn.feedback?.sentiment;
 
   return (
     <Message className="w-full">
@@ -310,42 +298,13 @@ export function AgentMessage({ turn, threadId, isLast }: AgentMessageProps) {
                 />
               ) : null}
 
-              {/* Follow-ups sit with the answer body (RCA mock) */}
-              {streamDone && answer.followups?.length > 0 ? (
-                <FollowupChips
-                  followups={answer.followups}
-                  disabled={isRunning}
-                  onSelect={(label, nextTurnId) =>
-                    void submitMessage(label, { explicitFixtureId: nextTurnId })
-                  }
-                />
-              ) : null}
             </div>
 
-            <div className="flex gap-2.5 pt-1">
-              <button
-                type="button"
-                aria-label="Thumbs up"
-                className={cn(
-                  "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
-                  feedback === "up" && "bg-green-50 text-feedback-success"
-                )}
-                onClick={() => setFeedback(turn.id, { sentiment: "up" })}
-              >
-                <ThumbsUp className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                aria-label="Thumbs down"
-                className={cn(
-                  "rounded-md p-1 text-fg-tertiary hover:bg-surface-muted hover:text-fg-secondary",
-                  feedback === "down" && "bg-red-50 text-feedback-danger"
-                )}
-                onClick={() => setFeedback(turn.id, { sentiment: "down" })}
-              >
-                <ThumbsDown className="size-3.5" />
-              </button>
-            </div>
+            <AnswerFeedback
+              turnId={turn.id}
+              feedback={turn.feedback}
+              onSubmit={(next) => setFeedback(turn.id, next)}
+            />
           </div>
         </AgentPlain>
       </div>

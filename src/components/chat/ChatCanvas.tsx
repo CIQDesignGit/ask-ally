@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { formatScopeChips } from "@/lib/utils";
 import { useAllyStore } from "@/store/ally-store";
 
 import { AgentMessage, UserMessage } from "./AgentMessage";
@@ -15,8 +14,6 @@ function displayTitle(title: string): string {
 
 export function ChatCanvas() {
   const thread = useAllyStore((s) => s.getActiveThread());
-  const scope = useAllyStore((s) => s.scope);
-  const chips = formatScopeChips(scope);
   const isEmpty = !thread || thread.turns.length === 0;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const prevUserTurnId = useRef<string | undefined>(undefined);
@@ -74,7 +71,7 @@ export function ChatCanvas() {
               if (turn.role === "user") {
                 return (
                   <div key={turn.id} id={`turn-${turn.id}`}>
-                    <UserMessage turn={turn} scopeChips={chips} />
+                    <UserMessage turn={turn} />
                   </div>
                 );
               }

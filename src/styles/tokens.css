@@ -97,7 +97,17 @@
   --warning-50: var(--feedback-warning-subtle);
   --warning-100: var(--feedback-warning-muted);
   --warning-600: var(--feedback-warning);
-  --error-600: var(--feedback-danger);
+  /* Error / info — match rca-allybrain GapToPlanReport tokens */
+  --error-50: #fef2f2;
+  --error-100: #fee2e2;
+  --error-600: #dc2626;
+  --error-700: #b91c1c;
+  --success-700: #047857;
+  --info-700: #1d4ed8;
+  --shadow-pane:
+    0 1px 2px -1px rgb(15 23 42 / 0.06),
+    0 4px 12px -4px rgb(15 23 42 / 0.05),
+    0 12px 32px -12px rgb(76 29 149 / 0.06);
   --muted: var(--surface-subtle);
   --muted-foreground: var(--fg-tertiary);
   --accent: var(--surface-muted);
